@@ -1,0 +1,12 @@
+{
+  "name": "public-enemy-1933",
+  "version": "0.1.0",
+  "description": "The sequel to Dead or Alive: a bank robber in the Midwest, May 1933 to December 1934, while the federal law learns faster than you do.",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "test": "node --test \"test/*.test.js\"",
+    "killgate": "node sim/killgate.js"
+  },
+  "engines": { "node": ">=20" }
+}
