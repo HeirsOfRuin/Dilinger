@@ -115,3 +115,29 @@ March 1934; Billie Frechette arrested 9 April 1934; Floyd killed 22 October 1934
 Nelson 27 November 1934; Fred and Ma Barker 16 January 1935; Karpis found 1 May
 1936, arrested 2 May; Ana Cumpanas's deportation deal. The Ford letter is
 disputed and is not quoted.
+
+## The slice (2026-10-30)
+
+Built: title, creation (name, skill, family code), the month screen, plan, the
+night's report, move, get out, gang, map, papers, end, help. Saves in the browser
+and as a text code (`PE1.`); the family code is read on the creation screen.
+
+Proved, not just written:
+- **The forecasts are the outcomes** (test/forecast.test.js): over 5,580 real jobs
+  the plan screen said 4.6% taken that month and 4.9% were; over 2,449 months
+  lying low, 5.3% said and 5.4% happened. The first version said 4.0% for jobs:
+  it left out the Bureau's file and the reward growing from the job itself, and
+  undersold the danger. Fixed before shipping.
+- **The phone test** (tools/smoke.mjs) plays whole games through the screens at 390
+  x 844: no script errors, nothing wider than the phone, no button under 32px,
+  every screen reached, a save survives a reload and travels as a code. It found:
+  the help link too small to tap; map labels running out of their states; an old
+  message left on the end screen. All fixed.
+- **The plan screen tells the whole cost.** It first showed only the street and the
+  road; a job in your home state looked safe while it brought the heat to your
+  door for the rest of the month. It now shows the month after, and the total.
+
+Hiring is in (a stake of $300, up to five men). The kill gate shows no gain for a
+careful player (row 10, 18.1% vs 19.6%, noise): careful gangs rarely lose men.
+It stays as a way back after losses, not a strategy.
+A man sent home still knows your new name: he counts when you disappear.

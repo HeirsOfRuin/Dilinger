@@ -107,6 +107,7 @@ export function vaultCash(s, town, t = s.t) {
 // The men you leave know the name you left under; each one's doubt counts.
 export function recogRisk(s) {
   const k = K(s);
-  const talk = 1 + s.men.reduce((a, m) => a + (100 - m.loyalty) / 100, 0) * k.recogMenTalk;
+  const men = [...s.men, ...(s.formerMen ?? [])]; // a man sent home still knows
+  const talk = 1 + men.reduce((a, m) => a + (100 - m.loyalty) / 100, 0) * k.recogMenTalk;
   return Math.min(0.6, k.recogBase * (0.3 + s.legendPeak / 100) * (0.3 + s.fed / 100) * (s.surgery ? k.surgeryRecog : 1) * talk * 2);
 }

@@ -17,6 +17,7 @@ const BASE = {
   extra: 0, // money wanted beyond the bare price of disappearing
   v8: true, // buy a fast car of your own
   girl: 'heed', // heed | ignore (stays in her city after the warning) | none
+  hire: true, // keep the gang at three
 };
 
 export const POLICIES = {
@@ -33,6 +34,7 @@ export const POLICIES = {
   reckless: { lieLowAt: 1, moveAt: 1, cross: 'never', bold: true },
   nocar: { v8: false },
   nogirl: { girl: 'none' },
+  nohire: { hire: false },
   ignore: { girl: 'ignore' },
 };
 
@@ -57,6 +59,7 @@ export function choose(s, policy) {
   const reserve = k.moveCost + k.livingLeader + k.stPaulFee;
   // Free actions first: the car, the girl.
   if (p.v8 && !s.car.v8 && s.cash > k.v8Cost + 4000) return { kind: 'buy', item: 'v8' };
+  if (p.hire && s.men.length < k.menStart && s.cash > k.hireCost + 4000) return { kind: 'hire' };
   if (p.girl !== 'none' && !s.girl && FRIEND_CITY[s.at]) return { kind: 'girl' };
   // Heeding the warning: get out of her friend's city.
   if (p.girl === 'heed' && s.girl && !s.girl.taken && s.girl.warnedAt != null && s.at === s.girl.city) {
@@ -95,7 +98,7 @@ export function choose(s, policy) {
   return { kind: 'job', town: pick.town.id, bold: p.bold, car: s.car.v8 ? 'own' : 'stolen' };
 }
 
-const FREE = new Set(['buy', 'girl']);
+const FREE = new Set(['buy', 'girl', 'hire', 'bonus', 'release']);
 
 export function playGame(seed, policy, tune = {}, onChoice = null, start = {}) {
   let s = newGame(seed, tune, start);

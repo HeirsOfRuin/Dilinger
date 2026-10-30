@@ -24,12 +24,12 @@ export function metrics(s) {
     townsfolk: s.stats.killed, crossed: s.stats.crossed, legendPeak: s.legendPeak,
     freeIn1934: Math.max(0, s.outcome.t + 1 - 8), // months lived past December 1933
     street: /street/.test(s.outcome.how), road: /road/.test(s.outcome.how),
-    lowMonths: s.stats.lowMonths, stPaulMonths: s.stats.stPaulMonths, moves: s.stats.moves, warned: s.stats.warned,
+    lowMonths: s.stats.lowMonths, stPaulMonths: s.stats.stPaulMonths, moves: s.stats.moves, warned: s.stats.warned, hired: s.stats.hired ?? 0,
   };
 }
 
 const rows = (list) => list.map(metrics);
-const AXES = ['disappeared', 'killed', 'captured', 'sold', 'atlarge', 'street', 'road', 'months', 'freeIn1934', 'jobs', 'take', 'kept', 'townsfolk', 'crossed', 'lowMonths', 'stPaulMonths', 'moves', 'warned'];
+const AXES = ['disappeared', 'killed', 'captured', 'sold', 'atlarge', 'street', 'road', 'months', 'freeIn1934', 'jobs', 'take', 'kept', 'townsfolk', 'crossed', 'lowMonths', 'stPaulMonths', 'moves', 'warned', 'hired'];
 function pair(q, a, b) {
   const A = rows(a), B = rows(b);
   console.log(`\n${q}`);
@@ -87,3 +87,4 @@ pair('8b. Your skill: driving -> nerve', games('careful', {}, 'sdrive', { skill:
 pair('9a. The family code: none -> the grandson of a Dead or Alive outlaw', games('careful'), games('careful', {}, 'family', { family: FAMILY }));
 pair('9b. The family code: takes after his gun -> his horse (driving)', games('careful', {}, 'fgun', { family: withSkill('gun') }), games('careful', {}, 'fhorse', { family: withSkill('horse') }));
 pair('9c. The family code: takes after his gun -> his nerve', games('careful', {}, 'fgun', { family: withSkill('gun') }), games('careful', {}, 'fnerve', { family: withSkill('nerve') }));
+pair('10. Hiring: careful (keeps the gang at three) -> never hires', games('careful'), games('nohire'));

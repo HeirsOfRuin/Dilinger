@@ -6,7 +6,13 @@
   "private": true,
   "scripts": {
     "test": "node --test \"test/*.test.js\"",
-    "killgate": "node sim/killgate.js"
+    "killgate": "node sim/killgate.js",
+    "build": "node tools/bundle.js",
+    "check-bundle": "node tools/check-bundle.mjs",
+    "smoke": "node tools/smoke.mjs",
+    "serve": "python3 -m http.server 8000"
   },
-  "engines": { "node": ">=20" }
+  "engines": {
+    "node": ">=20"
+  }
 }

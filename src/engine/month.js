@@ -3,7 +3,7 @@
 // choices always give the same game.
 import { streamFor } from './rng.js';
 import { K, townById, stateById, FRIEND_CITY } from './state.js';
-import { GIRLS, FRIENDS } from '../data/gang.data.js';
+import { GIRLS, FRIENDS, FIRST, LAST } from '../data/gang.data.js';
 import { TURNS, MONTHS, neighbours } from '../data/world.data.js';
 import { phase, stPaulHolds, fedRisk, localRisk, getawayRisk, informRisk, shootChance, killChance, sceneChance, friendRisk, reward, vaultCash, recogRisk } from './odds.js';
 
@@ -19,6 +19,9 @@ import { phase, stPaulHolds, fedRisk, localRisk, getawayRisk, informRisk, shootC
  * Free actions (no time passes):
  *   { kind: 'buy', item }         'v8': a fast car of your own
  *   { kind: 'girl' }              take up with a woman (home in Chicago's or St. Paul's state)
+ *   { kind: 'hire' }              take on a new man (a stake and a gun)
+ *   { kind: 'bonus', man, amount } money for one man's loyalty, once a month
+ *   { kind: 'release', man }      send a man home with his share
  * A job may name car: 'own' (your V-8) or 'stolen' (the default).
  *
  * s.at is the gang's home: where it lives, and where the month's dangers find it.
@@ -47,6 +50,40 @@ export function act(prev, action) {
     const r = rng('girl');
     s.girl = { name: r.pick(GIRLS), friend: r.pick(FRIENDS), loyalty: 70, taken: false, city: s.at, warnedAt: null };
     note(`You took up with ${s.girl.name}, a hat-check girl in ${FRIEND_CITY[s.at]}. Her friend ${s.girl.friend} rents rooms.`);
+    return s;
+  }
+
+  if (action.kind === 'hire') {
+    if (s.men.length >= k.hireMax) throw new Error(`A gang of ${k.hireMax} is all one man can keep.`);
+    if (s.cash < k.hireCost) throw new Error('Not enough money for a new man\'s stake.');
+    s.cash -= k.hireCost;
+    const r = rng(`hire${s.nextId}`);
+    const taken = new Set(s.men.map((m) => m.name));
+    let name;
+    do { name = `${r.pick(FIRST)} ${r.pick(LAST)}`; } while (taken.has(name));
+    s.men.push({ id: s.nextId++, name, loyalty: k.hireLoyalty });
+    s.stats.hired = (s.stats.hired ?? 0) + 1;
+    note(`${name} joined the gang.`);
+    return s;
+  }
+  if (action.kind === 'bonus') {
+    const m = s.men.find((x) => x.id === action.man);
+    if (!m) throw new Error('No such man.');
+    const amount = Math.max(0, Math.round(action.amount));
+    if (s.cash < amount) throw new Error('Not enough money.');
+    if ((m.bonusAt ?? -1) === s.t) throw new Error('He has had his bonus this month.');
+    s.cash -= amount;
+    m.loyalty = Math.min(100, m.loyalty + Math.min(k.bonusCap, amount * k.bonusLoyalty));
+    m.bonusAt = s.t;
+    note(`${m.name} took a bonus of $${amount}.`);
+    return s;
+  }
+  if (action.kind === 'release') {
+    const m = s.men.find((x) => x.id === action.man);
+    if (!m) throw new Error('No such man.');
+    s.men = s.men.filter((x) => x !== m);
+    s.formerMen = [...(s.formerMen ?? []), { name: m.name, loyalty: m.loyalty, t: s.t }];
+    note(`${m.name} went home with his share.`);
     return s;
   }
 
@@ -251,7 +288,7 @@ function goQuiet(s) {
   s.gone = { from: s.t };
   for (let m = 0; m < k.disappearMonths; m++) {
     const r = streamFor(s.seed, s.t + m, 'gone');
-    if (r.chance(recogRisk(s))) return end(s, phase(s) === 'armed' && r.chance(0.5) ? 'killed' : 'captured', `recognised ${m + 1} months after leaving`);
+    if (r.chance(recogRisk(s))) return end(s, phase(s) === 'armed' && r.chance(0.5) ? 'killed' : 'captured', `recognised ${m + 1} month${m ? 's' : ''} after leaving`);
     s.fed *= k.fedDecay;
   }
   s.stats.kept = s.cash;

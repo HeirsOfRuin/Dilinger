@@ -118,4 +118,10 @@ Object.assign(CONFIG, {
   familySym: 6, // a folk hero's grandson, or a murderer's
   familyFedGrudge: 10, // the Bureau's file starts open (a sheriff's grandson)
   familyInform: 1.2, // informers keener (the grandsons of men who sold him)
+
+  hireCost: 300, // a stake for a new man, and a gun
+  hireMax: 5, // the most men a gang keeps
+  hireLoyalty: 50, // a new man starts here
+  bonusLoyalty: 0.02, // loyalty per dollar of a bonus...
+  bonusCap: 10, // ...at most this much a month
 });
