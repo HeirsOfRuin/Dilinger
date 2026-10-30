@@ -89,10 +89,33 @@ export const CONFIG = {
   surgeryCost: 5000, // Dillinger paid about this, May 1934
   surgeryDeath: 0.04, // ether and a back-room doctor
   surgeryRecog: 0.45, // recognition with a new face
-  disappearNeed: 16000, // cash to leave with: a name, a trade, a few years
+  disappearNeed: 17000, // cash to leave with: a name, a trade, a few years
   epilogueMonths: 12, // 1935: what the Bureau does with men still at large
   epilogueFedFloor: 50, // the Public Enemy list keeps your file open
   disappearMonths: 6, // quiet months before the world forgets you
   recogBase: 0.28, // monthly recognition chance at Public Enemy 100 and attention 100
   recogMenTalk: 0.6, // ...times this for each man's doubt (100 - loyalty), summed: the men know your new name
 };
+
+// ---- design stage: cars, the girl, the men, the law by name, the family ----
+Object.assign(CONFIG, {
+  v8Cost: 700, // a Ford V-8, bought under another name
+  v8Getaway: 0.45, // tonight's risk in your own fast car
+  fedPlates: 1, // the Bureau's file grows with every job in a car it can trace
+  girlCost: 100, // a month: her rooms, her clothes
+  girlHome: 0.8, // police and Bureau risk at home while she rents the rooms in her name
+  girlTakenX: 0.5, // her monthly chance of being taken, as a share of the Bureau's chance on you
+  friendReward: 5000, // the friend starts asking once the reward passes this...
+  friendWarnChance: 0.5, // ...the papers or your girl notice, this often a month
+  friendSellChance: 0.5, // after a warning, she sells this often a month while you stay in her city
+  skillGetaway: 0.65, // your own driving: caught on the road
+  skillKill: 0.5, // your own gun: a shooting that kills
+  skillScene: 0.75, // your own nerve: taken in the street
+  familyCashShare: 0.05, // what is left of the grandfather's money (sixty years, a depression)
+  familyCashCap: 2000,
+  familyLegend: 8, // Public Enemy rank the heirloom adds once the papers find it
+  familyFound: 30, // ...at this rank
+  familySym: 6, // a folk hero's grandson, or a murderer's
+  familyFedGrudge: 10, // the Bureau's file starts open (a sheriff's grandson)
+  familyInform: 1.2, // informers keener (the grandsons of men who sold him)
+});

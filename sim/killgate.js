@@ -3,13 +3,18 @@
 //   node sim/killgate.js [runs=400]
 import { compare, noiseFloor } from './stats.js';
 import { playGame } from './bot.js';
+import { readFileSync } from 'node:fs';
+import { readFamilyCode } from '../src/engine/family.js';
 
 const runs = Number(process.argv[2] || 400);
 const seeds = Array.from({ length: runs }, (_, i) => 1 + i * 7919);
 const NO_LAWS = { crownPoint: 99, crimeBills: 99 }; // the world where 1934 never comes
 
 const cache = {};
-const games = (pol, tune = {}, tag = '') => (cache[pol + tag] ||= seeds.map((sd) => playGame(sd, pol, tune)));
+const games = (pol, tune = {}, tag = '', start = {}) => (cache[pol + tag] ||= seeds.map((sd) => playGame(sd, pol, tune, null, start)));
+// A real family code: a careful Dead or Alive game (Wild-West seed 55434) that retired.
+const FAMILY = readFamilyCode(readFileSync(new URL('../test/fixtures/family-v1.txt', import.meta.url), 'utf8'));
+const withSkill = (takesAfter) => ({ ...FAMILY, founder: { ...FAMILY.founder, takesAfter } });
 
 export function metrics(s) {
   const o = s.outcome.kind;
@@ -18,12 +23,13 @@ export function metrics(s) {
     months: s.outcome.t + 1, jobs: s.stats.jobs, take: s.stats.take, kept: s.stats.kept,
     townsfolk: s.stats.killed, crossed: s.stats.crossed, legendPeak: s.legendPeak,
     freeIn1934: Math.max(0, s.outcome.t + 1 - 8), // months lived past December 1933
-    lowMonths: s.stats.lowMonths, stPaulMonths: s.stats.stPaulMonths, moves: s.stats.moves,
+    street: /street/.test(s.outcome.how), road: /road/.test(s.outcome.how),
+    lowMonths: s.stats.lowMonths, stPaulMonths: s.stats.stPaulMonths, moves: s.stats.moves, warned: s.stats.warned,
   };
 }
 
 const rows = (list) => list.map(metrics);
-const AXES = ['disappeared', 'killed', 'captured', 'sold', 'atlarge', 'months', 'freeIn1934', 'jobs', 'take', 'kept', 'townsfolk', 'crossed', 'lowMonths', 'stPaulMonths', 'moves'];
+const AXES = ['disappeared', 'killed', 'captured', 'sold', 'atlarge', 'street', 'road', 'months', 'freeIn1934', 'jobs', 'take', 'kept', 'townsfolk', 'crossed', 'lowMonths', 'stPaulMonths', 'moves', 'warned'];
 function pair(q, a, b) {
   const A = rows(a), B = rows(b);
   console.log(`\n${q}`);
@@ -73,3 +79,11 @@ pair('3e. careful -> reckless (never lies low, never crosses, bold)', games('car
 pair('3f. careful -> lies low sooner (timid)', games('careful'), games('timid'));
 pair('4. St. Paul: careful -> never lives there', games('careful'), games('nostpaul'));
 pair('5. Moving house: careful -> never moves', games('careful'), games('homebody'));
+pair('6. Cars: careful (its own V-8) -> no car of its own', games('careful'), games('nocar'));
+pair('7a. The girl: careful (heeds the warning) -> no girl', games('careful'), games('nogirl'));
+pair('7b. The girl: heeds the warning -> ignores it', games('careful'), games('ignore'));
+pair('8a. Your skill: driving -> the gun', games('careful', {}, 'sdrive', { skill: 'drive' }), games('careful', {}, 'sgun', { skill: 'gun' }));
+pair('8b. Your skill: driving -> nerve', games('careful', {}, 'sdrive', { skill: 'drive' }), games('careful', {}, 'snerve', { skill: 'nerve' }));
+pair('9a. The family code: none -> the grandson of a Dead or Alive outlaw', games('careful'), games('careful', {}, 'family', { family: FAMILY }));
+pair('9b. The family code: takes after his gun -> his horse (driving)', games('careful', {}, 'fgun', { family: withSkill('gun') }), games('careful', {}, 'fhorse', { family: withSkill('horse') }));
+pair('9c. The family code: takes after his gun -> his nerve', games('careful', {}, 'fgun', { family: withSkill('gun') }), games('careful', {}, 'fnerve', { family: withSkill('nerve') }));

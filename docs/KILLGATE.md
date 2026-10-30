@@ -1,18 +1,46 @@
 # Kill gate: results
 
-Numbers only, before any screens. `node sim/killgate.js 400`: 400 seeds per
+Numbers only, before any screens. `node sim/killgate.js 800`: 800 seeds per
 policy, the same seeds for every policy. A gap is REAL only when it is wider than
-its noise floor (2 standard errors of the difference). The model is the engine's
-first cut (`src/engine`), not a throwaway: the game will be built on it.
+its noise floor (2 standard errors of the difference). The model is the engine
+(`src/engine`), not a throwaway: the game is built on it.
 
-Round 2 (2026-10-30): the gang has a home; St. Paul is a place to live; Iowa
-added; 1935 epilogue. Round 1 results are in git history (commit 766375e).
+## Round 3 (2026-10-30): cars, the girl, skills, the family code
+
+Careful now gets out **18.1%** of the time (band 15-20%). Rounds 1 and 2 are
+below; their numbers are from before these systems and are kept as a record.
+
+| Row | Comparison | Got out | What else moved (REAL) |
+|---|---|---|---|
+| 6 | own V-8 / no car of its own | 18.1% / 13.6% (REAL) | caught on the road 8.3% / 12.8% |
+| 7a | a girl (heeding the warning) / no girl | 18.1% / 18.1% | nothing: a wash for a player who listens |
+| 7b | heeds the warning / ignores it | 18.1% / 9.9% (REAL) | killed 28.7% / 47.5% |
+| 8a | skill: driving / the gun | 17.6% / 18.6% | caught on the road 6.3% / 9.8%; townsfolk killed per 100 games 63 / 31 |
+| 8b | skill: driving / nerve | 17.6% / 17.6% | road 6.3% / 10.0%; taken in the street 12.5% / 10.0% (near the floor) |
+| 9a | no family code / a real one (Wild-West seed 55434) | 18.1% / 18.1% | nothing: the code is a story and a small start, not a different game |
+| 9b-c | the founder's skill: gun / horse / nerve | 19.9% / 18.1% / 18.4% | the same shapes as 8a-b |
+
+The girl is a test of attention, not a bonus: listen to the warning and she costs
+nothing; ignore it and you are twice as likely to die (the Biograph).
+
+### Cut in round 3, because the gate showed they changed nothing
+
+| Cut | What the gate showed | Where it went |
+|---|---|---|
+| A radio in your car | No measurable effect (0.5 points) | Gone. The police radio by state stays. |
+| Purvis's Chicago office as extra reach | No effect: a careful gang never lives in Illinois or Indiana after Crown Point; even one that does showed 1 point | Purvis stays as a name in the papers |
+| The men's trades (driver, gunman, cool head) | A gang with all three against one with none: 2.5 points, noise | Back when hiring exists: choosing a man is the decision a trade needs |
+
+## Round 2 (2026-10-30): home, St. Paul, Iowa, 1935
+
+Numbers below are round 2's (400 seeds, before cars, the girl and skills; the
+price of leaving was $16,000 then, $17,000 now).
 
 ## The policies
 
 | Policy | Plays |
 |---|---|
-| careful | the best job within a drive of home, by take against risk; moves home when another state is clearly safer (St. Paul, while it holds); lies low when the month's risk at home passes 10%; buys a new face, then disappears once it has $16,000 |
+| careful | the best job within a drive of home, by take against risk; moves home when another state is clearly safer (St. Paul, while it holds); lies low when the month's risk at home passes 10%; buys a new face, then disappears once it has the price of leaving; buys a V-8 once it has $4,700; takes up with a girl in Chicago or St. Paul and leaves her friend's city when warned |
 | nocross / alwayscross / coin | careful, but robs only in its home state / only over the line / either at random |
 | greedy | careful, but stays for $8,000 more before leaving |
 | stayer | careful, but never leaves |
@@ -90,13 +118,11 @@ prison by 1936.
 | 1 | Lying low never paid | Lying low halves the Bureau's chance and cools its trail |
 | 2 | St. Paul was a money trap ($1,600 a month against five small towns): 1% got out | The fee cut to $250; Iowa added; the price of leaving set to $16,000 |
 
-## Open before design
+## Open before screens
 
 1. **Moving house is only St. Paul.** careful never moves anywhere else (the
-   homebody row equals nostpaul). Whether other moves matter waits for the
-   design stage: tourist courts and lodges (Little Bohemia) are the candidates.
-2. Cars, radio in your own car, the girlfriend, named men and lawmen, the family
-   code: none modelled yet. Each gets its own row here before it is built.
-3. The 1935 dates in the epilogue text (Floyd, Nelson, the Barkers, Karpis) and
-   the Mason City and Lincoln Court dates are from general knowledge and still to
-   be checked against a source before they appear as game text.
+   homebody row equals nostpaul). Tourist courts and lodges (Little Bohemia) are
+   the candidates for making other moves matter.
+2. **Hiring.** The gang starts at three and only shrinks. Hiring brings back the
+   men's trades (cut in round 3) as the choice of whom to take on.
+3. The dates for game text are now checked (see DESIGN.md, "Checked this stage").

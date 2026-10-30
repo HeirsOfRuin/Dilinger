@@ -2,9 +2,10 @@
 // comes from a named stream of (seed, turn, label), so the same seed and the same
 // choices always give the same game.
 import { streamFor } from './rng.js';
-import { K, townById, stateById } from './state.js';
+import { K, townById, stateById, FRIEND_CITY } from './state.js';
+import { GIRLS, FRIENDS } from '../data/gang.data.js';
 import { TURNS, MONTHS, neighbours } from '../data/world.data.js';
-import { phase, radioIn, stPaulHolds, fedRisk, localRisk, getawayRisk, informRisk, shootChance, vaultCash, recogRisk } from './odds.js';
+import { phase, stPaulHolds, fedRisk, localRisk, getawayRisk, informRisk, shootChance, killChance, sceneChance, friendRisk, reward, vaultCash, recogRisk } from './odds.js';
 
 /**
  * Actions:
@@ -15,6 +16,10 @@ import { phase, radioIn, stPaulHolds, fedRisk, localRisk, getawayRisk, informRis
  *                                  the gang's home to (or the one you live in)
  *   { kind: 'surgery', where }    a new face; the month is spent lying low
  *   { kind: 'disappear' }         leave with what you have
+ * Free actions (no time passes):
+ *   { kind: 'buy', item }         'v8': a fast car of your own
+ *   { kind: 'girl' }              take up with a woman (home in Chicago's or St. Paul's state)
+ * A job may name car: 'own' (your V-8) or 'stolen' (the default).
  *
  * s.at is the gang's home: where it lives, and where the month's dangers find it.
  */
@@ -25,6 +30,25 @@ export function act(prev, action) {
   const rng = (label) => streamFor(s.seed, s.t, label);
   const note = (text) => s.log.push({ t: s.t, text });
   let lyingLow = false;
+
+  if (action.kind === 'buy') {
+    const cost = { v8: k.v8Cost }[action.item];
+    if (cost == null) throw new Error(`Nothing called ${action.item} for sale.`);
+    if (s.car[action.item]) throw new Error('You already have one.');
+    if (s.cash < cost) throw new Error('Not enough money.');
+    s.cash -= cost;
+    s.car[action.item] = true;
+    note('A Ford V-8, bought under another name.');
+    return s;
+  }
+  if (action.kind === 'girl') {
+    if (s.girl) throw new Error('You already have a girl.');
+    if (!FRIEND_CITY[s.at]) throw new Error('You meet her in a city: live in Illinois or Minnesota.');
+    const r = rng('girl');
+    s.girl = { name: r.pick(GIRLS), friend: r.pick(FRIENDS), loyalty: 70, taken: false, city: s.at, warnedAt: null };
+    note(`You took up with ${s.girl.name}, a hat-check girl in ${FRIEND_CITY[s.at]}. Her friend ${s.girl.friend} rents rooms.`);
+    return s;
+  }
 
   if (action.kind === 'disappear') {
     if (s.cash < k.disappearNeed) throw new Error('Not enough money to disappear.');
@@ -78,7 +102,7 @@ function runJob(s, town, action, rng, note) {
   let take = Math.round(vault * r.float(...k.takeShare) * crew * (action.bold ? 1 : k.quietTake));
   let killed = 0, lawmen = 0;
   if (r.chance(shootChance(s, town, action.bold))) {
-    if (r.chance(k.shootKill)) {
+    if (r.chance(killChance(s))) {
       killed = 1;
       if (r.chance(k.shootLawman)) lawmen = 1;
     }
@@ -86,7 +110,7 @@ function runJob(s, town, action, rng, note) {
       const dead = s.men.splice(r.int(s.men.length), 1)[0];
       s.stats.menDead += 1;
       for (const m of s.men) m.loyalty -= k.loyaltyDeath;
-      note(`One of yours (man ${dead.id}) died in ${town.name}.`);
+      note(`${dead.name} died in ${town.name}.`);
     }
     take = Math.round(take * 0.6);
   }
@@ -104,16 +128,19 @@ function runJob(s, town, action, rng, note) {
     s.stats.lawmen += lawmen;
   }
   // Scene: taken before the cars get away (half as likely without radio).
-  if (town.guard && r.chance(town.guard * k.sceneCatch * (radioIn(s, town.state) ? 1 : 0.5))) {
+  if (town.guard && r.chance(sceneChance(s, town))) {
     logJob(s, cross, true);
     return end(s, 'captured', `taken in the street in ${town.name}`);
   }
   // The getaway: tonight's decision.
-  const getaway = getawayRisk(s, town.state, s.heat[town.state], cross);
+  const own = action.car === 'own';
+  if (own && !s.car.v8) throw new Error('You have no car of your own.');
+  const getaway = getawayRisk(s, town.state, s.heat[town.state], cross, s.t, own ? 'own' : 'stolen');
+  if (own) s.fed = Math.min(100, s.fed + kc * k.fedPlates); // plates the Bureau can trace
   if (cross) {
     s.stats.crossed += 1;
     s.cash -= k.crossCost;
-    s.fed = Math.min(100, s.fed + kc * k.fedDyer); // the stolen car over the line
+    if (!own) s.fed = Math.min(100, s.fed + kc * k.fedDyer); // a stolen car over the line
   }
   const caughtTonight = rng('getaway').chance(getaway);
   // Pay the men.
@@ -138,7 +165,8 @@ function endMonth(s, lyingLow, rng, note) {
   const k = K(s);
   // Living, and the St. Paul police's cut.
   const sheltered = stPaulHolds(s, s.at);
-  s.cash -= k.livingLeader + k.livingMan * s.men.length + (sheltered ? k.stPaulFee : 0);
+  const girl = s.girl && !s.girl.taken;
+  s.cash -= k.livingLeader + k.livingMan * s.men.length + (sheltered ? k.stPaulFee : 0) + (girl ? k.girlCost : 0);
   if (sheltered) s.stats.stPaulMonths += 1;
   if (s.cash < 0) {
     // Broke: the men drift off before you starve.
@@ -148,7 +176,7 @@ function endMonth(s, lyingLow, rng, note) {
   if (s.idle >= 2) for (const m of s.men) m.loyalty -= k.loyaltyIdle;
   s.men = s.men.filter((m) => {
     if (m.loyalty >= 25) return true;
-    note(`Man ${m.id} went his own way.`);
+    note(`${m.name} went his own way.`);
     return false;
   });
 
@@ -157,8 +185,13 @@ function endMonth(s, lyingLow, rng, note) {
   const local = localRisk(s, s.at, { lyingLow });
   const fed = fedRisk(s, { lyingLow });
   const sold = informRisk(s);
+  const friend = friendRisk(s);
   // Whether the month's last row (a job this month) ended in a catch, for the instruments.
   const job = s.jobsLog.at(-1)?.t === s.t ? s.jobsLog.at(-1) : null;
+  if (friend && r.chance(friend)) {
+    if (job) job.caught = true;
+    return end(s, 'killed', `sold by ${s.girl.friend}: the agents were waiting outside the picture house`);
+  }
   if (r.chance(sold)) { if (job) job.caught = true; return end(s, phase(s) === 'armed' && r.chance(0.6) ? 'killed' : 'sold', 'sold for the reward'); }
   if (r.chance(fed)) {
     if (job) job.caught = true;
@@ -169,6 +202,27 @@ function endMonth(s, lyingLow, rng, note) {
     if (job) job.caught = true;
     const shot = r.chance(k.localKilledShare);
     return end(s, shot ? 'killed' : 'captured', shot ? 'shot by police' : 'taken by police');
+  }
+
+  // Her month: the Bureau may take her; her friend may start asking.
+  if (girl) {
+    const g = s.girl;
+    if (r.chance(fed * k.girlTakenX)) {
+      g.taken = true;
+      note(`The agents took ${g.name}. She will not talk, but the rooms are gone.`);
+    } else if (g.warnedAt == null && s.at === g.city && reward(s) >= k.friendReward && phase(s) !== 'early' && r.chance(k.friendWarnChance)) {
+      g.warnedAt = s.t;
+      s.stats.warned += 1;
+      note(`${g.name} says ${g.friend} has been asking about the reward, and about her own papers.`);
+    }
+  }
+
+  // The papers find the family name.
+  if (s.family && !s.familyFound && s.legend >= k.familyFound) {
+    s.familyFound = true;
+    s.legend = Math.min(100, s.legend + k.familyLegend);
+    s.sympathy += s.family.sympathy;
+    note(`The papers have found the name: grandson of ${s.family.founder}${s.family.heirloom ? `, and the ${s.family.heirloom} he carries was his` : ''}.`);
   }
 
   // Cooling.

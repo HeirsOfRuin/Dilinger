@@ -17,7 +17,7 @@ export const radioIn = (s, stateId, t = s.t) => t >= stateById(stateId).radioFro
 export function fedRisk(s, { lyingLow = false, at = s.at, t = s.t } = {}) {
   const k = K(s);
   const recog = s.surgery ? k.surgeryRecog : 1;
-  const low = (lyingLow ? k.fedLieLow : 1) * (stPaulHolds(s, at, t) ? k.fedStPaul : 1);
+  const low = (lyingLow ? k.fedLieLow : 1) * girlShelter(s) * (stPaulHolds(s, at, t) ? k.fedStPaul : 1);
   return Math.min(0.9, (s.fed / 100) * k.fedReach[phase(s, t)] * k.fedCatch * recog * low);
 }
 
@@ -28,7 +28,7 @@ export function localRisk(s, stateId, { lyingLow = false, t = s.t } = {}) {
   const radio = radioIn(s, stateId, t) ? k.radioX : 1;
   const sym = 1.4 - s.sympathy / 100; // a county that likes you looks the other way
   const base = lyingLow ? k.hideRisk : k.localCatch;
-  let p = h * base * radio * sym;
+  let p = h * base * radio * sym * girlShelter(s);
   if (stPaulHolds(s, stateId, t)) p *= k.stPaulX;
   return Math.min(0.9, p);
 }
@@ -39,11 +39,17 @@ export function stPaulHolds(s, stateId = 'mn', t = s.t) {
   return stateId === 'mn' && t < K(s).stPaulEnds && !s.killedIn.mn && !s.stPaulBroken;
 }
 
-/** Tonight's chance the pursuit catches you after a job, staying or crossing. */
-export function getawayRisk(s, stateId, heatAfter, cross, t = s.t) {
+/** Rooms rented in her name: home is safer while you have a girl. */
+export const girlShelter = (s) => (s.girl && !s.girl.taken ? K(s).girlHome : 1);
+
+/** Tonight's chance the pursuit catches you after a job, staying or crossing.
+ * car: 'own' (your V-8, if you have one) or 'stolen'. */
+export function getawayRisk(s, stateId, heatAfter, cross, t = s.t, car = 'stolen') {
   const k = K(s);
-  const radio = radioIn(s, stateId, t) ? k.radioX : 1;
-  let p = (heatAfter / 100) * k.getawayCatch * radio;
+  const radio = radioIn(s, stateId, t);
+  let p = (heatAfter / 100) * k.getawayCatch * (radio ? k.radioX : 1);
+  if (car === 'own' && s.car?.v8) p *= k.v8Getaway;
+  if (s.me?.skill === 'drive') p *= k.skillGetaway;
   if (cross) p *= phase(s, t) === 'armed' ? k.crossShakeArmed : k.crossShake;
   return Math.min(0.9, p);
 }
@@ -60,13 +66,33 @@ export function informRisk(s, t = s.t) {
   const r = reward(s, t);
   const doubt = s.men.reduce((a, m) => a + (100 - m.loyalty) / 100, 0) + 0.4; // the landlord, the girl
   const sym = 1.3 - s.sympathy / 100;
-  return Math.min(0.5, (r * doubt * sym) / k.informScale);
+  const keen = s.family?.informers ? k.familyInform : 1;
+  return Math.min(0.5, (r * doubt * sym * keen) / k.informScale);
 }
 
 /** Chance a job turns into a shooting. */
 export function shootChance(s, town, bold) {
   const k = K(s);
   return Math.min(0.9, town.guard * k.guardShoot + (bold ? k.boldShoot : 0) + (s.men.length < 2 ? 0.1 : 0));
+}
+
+/** Chance a shooting kills someone. */
+export function killChance(s) {
+  const k = K(s);
+  return k.shootKill * (s.me?.skill === 'gun' ? k.skillKill : 1);
+}
+
+/** Chance of being taken in the street, before the cars get away. */
+export function sceneChance(s, town, t = s.t) {
+  const k = K(s);
+  return town.guard * k.sceneCatch * (radioIn(s, town.state, t) ? 1 : 0.5) * (s.me?.skill === 'nerve' ? k.skillScene : 1);
+}
+
+/** The girl's friend: this month's chance she sells you (only after a warning, only in her city). */
+export function friendRisk(s, t = s.t) {
+  const g = s.girl;
+  if (!g || g.warnedAt == null || g.warnedAt >= t || s.at !== g.city) return 0;
+  return K(s).friendSellChance;
 }
 
 /** Cash in a town's vault now: it refills over a year after a robbery. */

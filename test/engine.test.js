@@ -84,3 +84,45 @@ test('a man still free at the end of 1934 gets an ending from 1935', () => {
   }
   assert.ok(found >= 5, 'no epilogue endings found');
 });
+
+test('a real Dead or Alive family code is read, and a bad one is refused with a reason', async () => {
+  const { readFileSync } = await import('node:fs');
+  const { readFamilyCode, inheritance } = await import('../src/engine/family.js');
+  const code = readFileSync(new URL('./fixtures/family-v1.txt', import.meta.url), 'utf8');
+  const r = readFamilyCode(code);
+  assert.equal(r.game, 'dead-or-alive');
+  const inh = inheritance(r, CONFIG);
+  assert.ok(['drive', 'gun', 'nerve'].includes(inh.skill));
+  assert.ok(inh.cash >= 0 && inh.cash <= CONFIG.familyCashCap);
+  const s = newGame(11, {}, { family: r });
+  assert.ok(s.me.name.endsWith(inh.last), s.me.name);
+  assert.equal(s.cash, CONFIG.startCash + inh.cash);
+  assert.throws(() => readFamilyCode('OUTLAW1.abc'), /not a family code/);
+  assert.throws(() => readFamilyCode('DOAFAM2.abc'), /newer version/);
+  assert.throws(() => readFamilyCode('DOAFAM1.!!!!'), /not a family code|damaged/);
+});
+
+test('the friend never sells without a warning first, and never outside her city', async () => {
+  const { friendRisk } = await import('../src/engine/odds.js');
+  const s = newGame(13, {}, { at: 'mn' });
+  const g = act(s, { kind: 'girl' });
+  assert.equal(g.t, 0, 'taking up with her takes no time');
+  assert.equal(friendRisk(g, 5), 0);
+  const warned = { ...g, girl: { ...g.girl, warnedAt: 4 } };
+  assert.equal(friendRisk(warned, 4), 0, 'not in the month of the warning');
+  assert.ok(friendRisk(warned, 5) > 0);
+  assert.equal(friendRisk({ ...warned, at: 'wi' }, 5), 0);
+  for (let i = 0; i < 400; i++) {
+    const end = playGame(1 + i * 7919, 'ignore');
+    if (/sold by Mrs/.test(end.outcome.how)) assert.ok(end.girl.warnedAt != null && end.girl.warnedAt < end.outcome.t);
+  }
+});
+
+test('a V-8 is bought once, costs what the config says, and is needed to drive your own car', () => {
+  const s = { ...newGame(17), cash: 5000 };
+  const b = act(s, { kind: 'buy', item: 'v8' });
+  assert.equal(b.cash, 5000 - CONFIG.v8Cost);
+  assert.equal(b.t, 0);
+  assert.throws(() => act(b, { kind: 'buy', item: 'v8' }), /already/);
+  assert.throws(() => act(newGame(17), { kind: 'job', town: 'daleville', car: 'own' }), /no car/);
+});
