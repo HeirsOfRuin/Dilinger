@@ -53,7 +53,7 @@ export const CONFIG = {
   livingLeader: 500, // a month on the run: rooms, cars, guns, doctors
   livingMan: 200, // each man you keep
   leaderShare: 0.35, // your share of a take (the rest goes to the men)
-  stPaulFee: 500, // a month under the layover arrangement
+  stPaulFee: 250, // a month under the layover arrangement, on top of living
   lieLowCost: 200, // a month quiet anywhere else, beyond living
 
   // ---- Public Enemy and sympathy ----
@@ -66,12 +66,14 @@ export const CONFIG = {
   sympathyFdic: 10, // depositors stop losing their savings when you rob a bank
 
   // ---- hiding and informers ----
-  hideRisk: 0.04,
+  hideRisk: 0.04, // monthly risk where you lie low, at heat 100 (scaled by heat)
   fedLieLow: 0.5, // the Bureau's chance while you keep off the streets
-  fedStPaul: 0.4, // ...and under the layover arrangement, which tips you off
+  fedStPaul: 0.4, // living under the layover arrangement: the police tip you off before a raid
   fedDecayStPaul: 0.6, // ...and faster still where the police feed the Bureau nothing
-  fedDecayLieLow: 0.85, // a trail goes cold faster when you stop making news // monthly risk where you lie low, at heat 100 (scaled by heat)
-  stPaulX: 0.1, // risk multiplier under the layover arrangement
+  fedDecayLieLow: 0.85, // a trail goes cold faster when you stop making news
+  stPaulX: 0.1, // local police risk at home under the layover arrangement
+  stPaulRaidHeat: 50, // heat at home when the arrangement ends while you live there (Lincoln Court, 31 March 1934)
+  moveCost: 400, // moving the gang's home: rooms, garages, a landlord who asks nothing
   lieLowHeat: 0.4, // heat kept in a month lying low (instead of heatDecay)
   rewardPerLegend: 150, // dollars of reward per point of Public Enemy rank
   rewardFed: 10000, // the federal reward, once the bills pass, at rank 60+
@@ -87,8 +89,10 @@ export const CONFIG = {
   surgeryCost: 5000, // Dillinger paid about this, May 1934
   surgeryDeath: 0.04, // ether and a back-room doctor
   surgeryRecog: 0.45, // recognition with a new face
-  disappearNeed: 21000, // cash to leave with: a name, a trade, a few years
+  disappearNeed: 16000, // cash to leave with: a name, a trade, a few years
+  epilogueMonths: 12, // 1935: what the Bureau does with men still at large
+  epilogueFedFloor: 50, // the Public Enemy list keeps your file open
   disappearMonths: 6, // quiet months before the world forgets you
-  recogBase: 0.28,
-  recogMenTalk: 0.6, // ...times this for each man's doubt (100 - loyalty), summed: the men know your new name // monthly recognition chance at Public Enemy 100 and attention 100
+  recogBase: 0.28, // monthly recognition chance at Public Enemy 100 and attention 100
+  recogMenTalk: 0.6, // ...times this for each man's doubt (100 - loyalty), summed: the men know your new name
 };

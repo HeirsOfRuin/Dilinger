@@ -1,4 +1,4 @@
-// The map: five states, their towns, and the dates that change them.
+// The map: six states, their towns, and the dates that change them.
 // Turn 0 is May 1933; turn 19 is December 1934.
 
 export const START = { year: 1933, month: 4 }; // month is 0-based: 4 = May
@@ -22,9 +22,10 @@ export const STATES = [
   { id: 'oh', name: 'Ohio', radioFrom: turnOf(1933, 10), sympathy: 55 },
   { id: 'wi', name: 'Wisconsin', radioFrom: turnOf(1934, 5), sympathy: 55 },
   { id: 'mn', name: 'Minnesota', radioFrom: turnOf(1934, 3), sympathy: 50 },
+  { id: 'ia', name: 'Iowa', radioFrom: turnOf(1934, 4), sympathy: 60 },
 ];
 
-export const LINES = [['in', 'il'], ['in', 'oh'], ['il', 'wi'], ['wi', 'mn']];
+export const LINES = [['in', 'il'], ['in', 'oh'], ['il', 'wi'], ['wi', 'mn'], ['mn', 'ia'], ['ia', 'il'], ['ia', 'wi']];
 export const neighbours = (id) => LINES.flatMap(([a, b]) => (a === id ? [b] : b === id ? [a] : []));
 
 // Banks. cash: what the vault usually holds (1933 dollars). Real hauls for scale:
@@ -45,4 +46,7 @@ export const TOWNS = [
   { id: 'stpaul', name: 'St. Paul', state: 'mn', cash: 30000, guard: 2, city: true },
   { id: 'southstpaul', name: 'South St. Paul', state: 'mn', cash: 20000, guard: 1 },
   { id: 'mankato', name: 'Mankato', state: 'mn', cash: 8000, guard: 0 },
+  { id: 'masoncity', name: 'Mason City', state: 'ia', cash: 30000, guard: 1 },
+  { id: 'siouxcity', name: 'Sioux City', state: 'ia', cash: 12000, guard: 1 },
+  { id: 'clearlake', name: 'Clear Lake', state: 'ia', cash: 5000, guard: 0 },
 ];

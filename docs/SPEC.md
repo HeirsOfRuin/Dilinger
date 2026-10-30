@@ -15,14 +15,27 @@ you last, who sells you, and whether you can vanish before the net closes.
 
 ## Core loop (one turn = one month, 20 turns)
 
-1. **Choose:** a job (a bank, a police arsenal, a jail break), lie low (where, at
-   what cost), move to another state, or buy your way out (a new face, a new name).
+1. **Choose:** a job within a drive of home (a bank, a police arsenal, a jail
+   break), lie low, move the gang's home to another state, or buy your way out (a
+   new face, a new name).
 2. **The job:** plan with roles (wheelman, inside man, lookout), resolve it from the
    same formulas the forecast shows.
-3. **The getaway:** the decision this game is about: **cross a state line tonight,
-   or go to ground here.** Its value changes by date (below).
-4. **The month passes:** local heat cools, federal attention does not; papers,
-   radio, informers, your own men.
+3. **Where to rob:** the decision this game is about: **at home, or over the line,
+   with a state line between the job and where you sleep.** The gang drives home
+   after every job; a job over the line means crossing it that night. Its value
+   changes by date (below).
+4. **The month passes, at home:** local heat cools, federal attention does not;
+   papers, radio, informers, your own men.
+
+## Home and St. Paul
+
+The gang lives somewhere, and the month's dangers find it there. St. Paul's
+arrangement (from 1900, broken by 1934) shelters a gang that lives in the city:
+the police take a cut and tip you off before a raid. Its one rule: no jobs and no
+killing in Minnesota. Break it, or still be living there when it ends in summer
+1934, and the police who took your money come for you (as at the Lincoln Court
+Apartments, 31 March 1934). From St. Paul, the reachable banks are in Wisconsin
+and Iowa (the gang robbed Mason City, Iowa, 13 March 1934).
 
 ## The three pressures
 
@@ -39,7 +52,7 @@ you last, who sells you, and whether you can vanish before the net closes.
 | May 1933 | The Bureau has no general arrest power and no guns; a stolen car driven across a state line is already federal (Dyer Act, 1919) | Crossing after a job in a stolen car marks you a little; mostly the line shakes pursuit |
 | June 1933 | Kansas City Massacre (17 June): four lawmen and their prisoner killed at Union Station | The public turns a little; the Bureau starts to care |
 | March 1934 | Crown Point escape (3 March) in a stolen car taken across the Indiana line | The Bureau has a named case on you; reach rises |
-| June 1934 | Crime bills signed 18 May 1934: robbing a national or member bank is federal; agents may arrest and carry guns | Full reach; crossing a line no longer shakes anyone that matters |
+| June 1934 | Crime bills signed 18 May 1934: robbing a national or member bank is federal; agents may arrest and carry guns | Full reach; roadblocks at the lines; crossing is worth half what it was |
 
 ## Other dated events (checked)
 
@@ -56,7 +69,9 @@ and Bremer kidnappings and the federal men arrive.
 - **Win (rare, 15-20% for a careful player):** disappear: enough cash, a new face,
   then six quiet months somewhere nobody looks without being recognised.
 - **Loss:** killed, taken, or sold. Still robbing banks at the end of 1934 is not a
-  win: the epilogue says what the Bureau did with the men still at large.
+  win: an epilogue plays 1935 a month at a time, the Bureau armed and your file
+  open (Floyd shot October 1934, Nelson November 1934, the Barkers January 1935,
+  Karpis taken May 1936). Surviving it reads "never taken, never free".
 - **Score:** months free, money kept, Public Enemy peak, townsfolk and lawmen killed
   (shown plainly).
 
@@ -69,7 +84,7 @@ foreclosing (the opening), grandsons of friends and of men who sold him.
 
 ## First playable scope
 
-Five states (Indiana, Illinois, Ohio, Wisconsin, Minnesota), about 12 towns and two
+Six states (Indiana, Illinois, Ohio, Wisconsin, Minnesota, Iowa), 15 towns and two
 cities (Chicago, St. Paul); targets: banks, police arsenals, one jail; 6-8 named
 men; the federal track; radio by state; one betrayal arc; the family code read.
 
@@ -77,12 +92,12 @@ men; the federal track; radio by state; one betrayal arc; the family code read.
 
 Numbers only, fixed bot policies on the same seeds, every gap with its noise floor:
 
-1. **The line by date:** crossing after a job cuts the chance of being caught next
-   month in 1933 by a real margin; by mid-1934 the margin is gone or reversed.
+1. **The line by date:** robbing over the line from home cuts the chance of being
+   caught in 1933 by a real margin; by mid-1934 the margin has shrunk.
 2. **The federal track ends careers:** the same careful policy in a world where the
    1934 laws never pass lives measurably longer in 1934.
 3. **Disappearing is reachable but rare:** careful 15-20%; never quitting near 0%.
-4. **St. Paul matters while it lasts:** lying low there pays until it ends.
+4. **St. Paul matters while it lasts:** living there pays until it ends.
 
 ## Assumptions and risks
 

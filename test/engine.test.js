@@ -18,7 +18,7 @@ test('the same seed and policy give the same game', () => {
 test('act never changes the state it is given', () => {
   const s = newGame(7);
   const copy = structuredClone(s);
-  act(s, { kind: 'job', town: 'daleville', bold: false, cross: 'oh' });
+  act(s, { kind: 'job', town: 'daleville', bold: false });
   assert.deepEqual(s, copy);
 });
 
@@ -29,7 +29,7 @@ test('no number goes bad over 300 games of every policy', () => {
       const nums = [s.cash, s.fed, s.legend, s.sympathy, ...Object.values(s.heat), ...s.men.map((m) => m.loyalty)];
       assert.ok(nums.every(Number.isFinite), `${pol} seed ${i}: non-finite`);
       assert.ok(s.cash >= 0, `${pol} seed ${i}: negative cash`);
-      assert.ok(s.outcome && s.outcome.t <= 20, `${pol} seed ${i}: no ending`);
+      assert.ok(s.outcome && s.outcome.t <= 19, `${pol} seed ${i}: no ending`);
     }
   }
 });
@@ -50,7 +50,37 @@ test('the dates are where the sources put them', () => {
 test('bad actions are refused, not guessed at', () => {
   const s = newGame(3);
   assert.throws(() => act(s, { kind: 'job', town: 'mankato' }), /Too far/);
-  assert.throws(() => act(s, { kind: 'job', town: 'daleville', cross: 'mn' }), /not over the line/);
   assert.throws(() => act(s, { kind: 'disappear' }), /Not enough money/);
   assert.throws(() => act(s, { kind: 'fly' }), /Unknown action/);
+});
+
+test('St. Paul shelters a gang that lives there, until it breaks the rule or the date passes', async () => {
+  const { stPaulHolds, localRisk } = await import('../src/engine/odds.js');
+  const s = newGame(5, {}, { at: 'mn' });
+  s.heat.mn = 60;
+  s.heat.wi = 60;
+  assert.ok(stPaulHolds(s));
+  assert.ok(localRisk(s, 'mn') < localRisk(s, 'wi') / 5);
+  const after = act(s, { kind: 'job', town: 'mankato', bold: false });
+  assert.equal(after.stPaulBroken, true);
+  assert.equal(stPaulHolds(after), false);
+  assert.equal(stPaulHolds(s, 'mn', CONFIG.stPaulEnds), false);
+});
+
+test('robbing over the line means crossing on the way home; at home it does not', () => {
+  const s = newGame(9);
+  const over = act(s, { kind: 'job', town: 'rockford', bold: false });
+  const home = act(s, { kind: 'job', town: 'daleville', bold: false });
+  assert.equal(over.jobsLog[0].crossed, true);
+  assert.equal(home.jobsLog[0].crossed, false);
+  if (!over.outcome) assert.equal(over.at, 'in');
+});
+
+test('a man still free at the end of 1934 gets an ending from 1935', () => {
+  let found = 0;
+  for (let i = 0; i < 400 && found < 5; i++) {
+    const s = playGame(1 + i * 7919, 'stayer');
+    if (s.outcome.t === 19 && /1935/.test(s.outcome.how)) found++;
+  }
+  assert.ok(found >= 5, 'no epilogue endings found');
 });

@@ -4,14 +4,15 @@ import { act } from '../src/engine/month.js';
 import { newGame, K } from '../src/engine/state.js';
 import { streamFor } from '../src/engine/rng.js';
 import { TOWNS, STATES, neighbours } from '../src/data/world.data.js';
-import { fedRisk, localRisk, getawayRisk, informRisk, shootChance, vaultCash, phase, stPaulHolds } from '../src/engine/odds.js';
+import { fedRisk, localRisk, getawayRisk, informRisk, shootChance, vaultCash, stPaulHolds } from '../src/engine/odds.js';
 
 const BASE = {
-  cross: 'smart', // smart | never | always | coin | early (only before the bills)
+  cross: 'smart', // smart | never (rob only at home) | always (rob only over the line) | coin
   bold: false,
-  stPaul: true, // lie low in St. Paul while the arrangement holds
+  stPaul: true, // live in St. Paul while the arrangement holds
   quit: true, // buy a face and disappear once the money is there
-  lieLowAt: 0.1, // lie low when this month's risk where you are passes this
+  lieLowAt: 0.1, // lie low when this month's risk at home passes this
+  moveAt: 0.08, // move the gang when home is this much riskier than the best other home
   lifeValue: 40000, // what the bot thinks its neck is worth, in dollars
   extra: 0, // money wanted beyond the bare price of disappearing
 };
@@ -20,33 +21,24 @@ export const POLICIES = {
   careful: {},
   nocross: { cross: 'never' },
   alwayscross: { cross: 'always' },
-  coin: { cross: 'coin' }, // crosses at random: the clean measure of the line's value
-  early: { cross: 'early' },
+  coin: { cross: 'coin' }, // over the line or at home, at random
   bold: { bold: true },
   stayer: { quit: false },
-  greedy: { extra: 15000 }, // stays for $15,000 more before leaving
+  greedy: { extra: 8000 }, // stays for $8,000 more before leaving
   nostpaul: { stPaul: false },
   timid: { lieLowAt: 0.06 }, // lies low at the first sign of trouble
-  reckless: { lieLowAt: 1, cross: 'never', bold: true },
+  homebody: { moveAt: 1 }, // never moves house
+  reckless: { lieLowAt: 1, moveAt: 1, cross: 'never', bold: true },
 };
 
-function stayRisk(s, stateId, heat) {
-  const t = { ...s, heat: { ...s.heat, [stateId]: heat } };
-  return localRisk(t, stateId);
+/** A month at home in a state, as the bot reckons it: police, Bureau, informers. */
+function homeRisk(s, id, heat = s.heat[id]) {
+  const t = { ...s, heat: { ...s.heat, [id]: heat } };
+  return localRisk(t, id) + fedRisk(t, { at: id }) + informRisk(t);
 }
 
-/** The bot's choice of where to go over the line, and whether to go at all. */
-function crossChoice(s, town, p, heatAfter) {
-  const over = neighbours(town.state);
-  const best = over.sort((a, b) => s.heat[a] - s.heat[b])[0];
-  if (p.cross === 'never') return null;
-  if (p.cross === 'always') return best;
-  if (p.cross === 'coin') return streamFor(s.seed, s.t, 'bot-coin').chance(0.5) ? best : null;
-  if (p.cross === 'early') return phase(s) === 'armed' ? null : best;
-  // smart: compare tonight plus the month after, both ways, against the cost.
-  const stay = getawayRisk(s, town.state, heatAfter, false) + stayRisk(s, town.state, heatAfter * K(s).heatDecay);
-  const go = getawayRisk(s, town.state, heatAfter, true) + stayRisk(s, best, s.heat[best] * K(s).heatDecay) + (K(s).fedDyer / 100) * 0.1;
-  return go * p.lifeValue + K(s).crossCost < stay * p.lifeValue ? best : null;
+function allowedHomes(s, p) {
+  return STATES.map((x) => x.id).filter((id) => p.stPaul || !stPaulHolds(s, id));
 }
 
 export function choose(s, policy) {
@@ -54,29 +46,39 @@ export function choose(s, policy) {
   const k = K(s);
   const surgeryLeft = s.surgery ? 0 : k.surgeryCost;
   if (p.quit && s.cash >= k.disappearNeed + p.extra + surgeryLeft + k.lieLowCost + k.livingLeader) {
-    if (!s.surgery) return { kind: 'surgery', where: safest(s, p) };
+    if (!s.surgery) return { kind: 'surgery', where: s.at };
     return { kind: 'disappear' };
   }
-  const here = localRisk(s, s.at) + fedRisk(s) + informRisk(s);
-  if (here > p.lieLowAt && s.cash > k.lieLowCost + k.livingLeader + k.stPaulFee) return { kind: 'lielow', where: safest(s, p) };
-  // The best job within a drive.
-  const reach = [s.at, ...neighbours(s.at)];
-  let best = null;
+  const reserve = k.moveCost + k.livingLeader + k.stPaulFee;
+  // Move house when another home is clearly safer (St. Paul, while it holds, usually is).
+  const homes = allowedHomes(s, p).map((id) => ({ id, r: homeRisk(s, id) + (stPaulHolds(s, id) ? 0 : 0) }));
+  const best = homes.sort((a, b) => a.r - b.r)[0];
+  const here = homeRisk(s, s.at);
+  if (best.id !== s.at && here - best.r > p.moveAt * (p.stPaul ? 0.25 : 1) && s.cash > reserve) return { kind: 'lielow', where: best.id };
+  if (!allowedHomes(s, p).includes(s.at) && s.cash > reserve) return { kind: 'lielow', where: best.id };
+  if (here > p.lieLowAt && s.cash > reserve) return { kind: 'lielow', where: s.at };
+  // The best job within a drive of home.
+  const coin = streamFor(s.seed, s.t, 'bot-coin').chance(0.5);
+  const reach = [s.at, ...neighbours(s.at)].filter((id) => {
+    const over = id !== s.at;
+    if (p.cross === 'never') return !over;
+    if (p.cross === 'always') return over;
+    if (p.cross === 'coin') return over === coin;
+    return true;
+  });
+  let pick = null;
   for (const town of TOWNS.filter((x) => reach.includes(x.state))) {
+    if (town.state === 'mn' && stPaulHolds(s) && s.at === 'mn') continue; // the one rule
+    const cross = town.state !== s.at;
     const take = vaultCash(s, town) * 0.72 * (p.bold ? 1 : k.quietTake) * Math.min(1, (s.men.length + 1) / 4) * k.leaderShare;
     const heatAfter = Math.min(100, s.heat[town.state] + k.heatJob + (p.bold ? k.heatBold : 0));
-    const cross = crossChoice(s, town, p, heatAfter);
-    const risk = getawayRisk(s, town.state, heatAfter, !!cross) + shootChance(s, town, p.bold) * 0.15 + town.guard * k.sceneCatch;
-    const value = take - risk * p.lifeValue;
-    if (!best || value > best.value) best = { value, town, cross };
+    const after = cross ? homeRisk(s, s.at) : homeRisk(s, s.at, heatAfter * k.heatDecay);
+    const risk = getawayRisk(s, town.state, heatAfter, cross) + after + shootChance(s, town, p.bold) * 0.15 + town.guard * k.sceneCatch;
+    const value = take - risk * p.lifeValue - (cross ? k.crossCost : 0);
+    if (!pick || value > pick.value) pick = { value, town };
   }
-  return { kind: 'job', town: best.town.id, bold: p.bold, cross: best.cross };
-}
-
-function safest(s, p) {
-  const options = STATES.map((x) => x.id).filter((id) => p.stPaul || id !== 'mn' || !stPaulHolds(s, 'mn'));
-  return options.map((id) => ({ id, r: localRisk(s, id, { lyingLow: true }) + fedRisk(s, { lyingLow: true, at: id }) + (id === s.at ? 0 : 0.002) }))
-    .sort((a, b) => a.r - b.r)[0].id;
+  if (!pick) return { kind: 'lielow', where: s.at };
+  return { kind: 'job', town: pick.town.id, bold: p.bold };
 }
 
 export function playGame(seed, policy, tune = {}, onChoice = null) {

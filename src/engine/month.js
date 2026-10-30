@@ -2,16 +2,21 @@
 // comes from a named stream of (seed, turn, label), so the same seed and the same
 // choices always give the same game.
 import { streamFor } from './rng.js';
-import { K, townById } from './state.js';
-import { TURNS, neighbours, dateName } from '../data/world.data.js';
+import { K, townById, stateById } from './state.js';
+import { TURNS, MONTHS, neighbours } from '../data/world.data.js';
 import { phase, radioIn, stPaulHolds, fedRisk, localRisk, getawayRisk, informRisk, shootChance, vaultCash, recogRisk } from './odds.js';
 
 /**
  * Actions:
- *   { kind: 'job', town, bold, cross }  cross: a neighbouring state id, or null to stay
- *   { kind: 'lielow', where }           where: a state id (moving there costs a crossing)
- *   { kind: 'surgery', where }          a new face; the month is spent lying low
- *   { kind: 'disappear' }               leave with what you have
+ *   { kind: 'job', town, bold }   a town in the state you live in or one next to it.
+ *                                  The gang drives home after: a town over the line
+ *                                  means crossing it tonight.
+ *   { kind: 'lielow', where }     a month off the streets; where: a state id to move
+ *                                  the gang's home to (or the one you live in)
+ *   { kind: 'surgery', where }    a new face; the month is spent lying low
+ *   { kind: 'disappear' }         leave with what you have
+ *
+ * s.at is the gang's home: where it lives, and where the month's dangers find it.
  */
 export function act(prev, action) {
   if (prev.outcome) return prev;
@@ -30,20 +35,20 @@ export function act(prev, action) {
     const town = townById(action.town);
     if (!town) throw new Error(`No such town: ${action.town}`);
     if (town.state !== s.at && !neighbours(s.at).includes(town.state)) throw new Error('Too far to drive for a job.');
-    if (action.cross && !neighbours(town.state).includes(action.cross)) throw new Error('That state is not over the line.');
     runJob(s, town, action, rng, note);
     if (s.outcome) return s;
   } else if (action.kind === 'lielow' || action.kind === 'surgery') {
     lyingLow = true;
     const where = action.where ?? s.at;
     if (where !== s.at) {
-      s.cash -= k.crossCost;
+      s.cash -= k.moveCost;
       s.at = where;
+      s.stats.moves += 1;
+      note(`The gang moved to ${stateById(where).name}.`);
     }
-    s.cash -= k.lieLowCost + (where === 'mn' && s.t < k.stPaulEnds ? k.stPaulFee - k.lieLowCost : 0);
+    s.cash -= k.lieLowCost;
     s.idle += 1;
     s.stats.lowMonths += 1;
-    if (where === 'mn' && s.t < k.stPaulEnds && !s.killedIn.mn) s.stats.stPaulMonths += 1;
     if (action.kind === 'surgery') {
       if (s.surgery) throw new Error('You already have a new face.');
       if (s.cash < k.surgeryCost) throw new Error('Not enough money for the doctor.');
@@ -64,6 +69,11 @@ function runJob(s, town, action, rng, note) {
   s.idle = 0;
   const vault = vaultCash(s, town);
   s.robbed[town.id] = s.t;
+  const cross = town.state !== s.at; // the drive home goes over the line
+  if (town.state === 'mn' && stPaulHolds(s)) {
+    s.stPaulBroken = true;
+    note('A job in Minnesota: the St. Paul police will not protect you again.');
+  }
   const crew = Math.min(1, (s.men.length + 1) / 4);
   let take = Math.round(vault * r.float(...k.takeShare) * crew * (action.bold ? 1 : k.quietTake));
   let killed = 0, lawmen = 0;
@@ -95,17 +105,16 @@ function runJob(s, town, action, rng, note) {
   }
   // Scene: taken before the cars get away (half as likely without radio).
   if (town.guard && r.chance(town.guard * k.sceneCatch * (radioIn(s, town.state) ? 1 : 0.5))) {
-    logJob(s, action.cross, true);
+    logJob(s, cross, true);
     return end(s, 'captured', `taken in the street in ${town.name}`);
   }
   // The getaway: tonight's decision.
-  const getaway = getawayRisk(s, town.state, s.heat[town.state], !!action.cross);
-  if (action.cross) {
+  const getaway = getawayRisk(s, town.state, s.heat[town.state], cross);
+  if (cross) {
     s.stats.crossed += 1;
     s.cash -= k.crossCost;
     s.fed = Math.min(100, s.fed + kc * k.fedDyer); // the stolen car over the line
-    s.at = action.cross;
-  } else s.at = town.state;
+  }
   const caughtTonight = rng('getaway').chance(getaway);
   // Pay the men.
   const mine = Math.round(take * k.leaderShare);
@@ -113,8 +122,8 @@ function runJob(s, town, action, rng, note) {
   s.cash += s.men.length ? mine : take;
   for (const m of s.men) m.loyalty = Math.min(100, m.loyalty + Math.min(k.loyaltyShareCap, each * k.loyaltyShare));
   s.stats.take += take;
-  note(`${town.name}: $${take.toLocaleString('en-US')}${killed ? (lawmen ? ', a policeman killed' : ', a man in the bank killed') : ''}${action.cross ? `; over the line by morning` : ''}.`);
-  s.jobsLog.push({ t: s.t, phase: phase(s), crossed: !!action.cross, caught: caughtTonight });
+  note(`${town.name}: $${take.toLocaleString('en-US')}${killed ? (lawmen ? ', a policeman killed' : ', a man in the bank killed') : ''}${cross ? '; over the line by morning' : ''}.`);
+  s.jobsLog.push({ t: s.t, phase: phase(s), crossed: cross, caught: caughtTonight });
   if (caughtTonight) {
     const shot = rng('getaway-end').chance(K(s).localKilledShare);
     return end(s, shot ? 'killed' : 'captured', shot ? 'shot on the road that night' : 'taken on the road that night');
@@ -127,8 +136,10 @@ function logJob(s, crossed, caught) {
 
 function endMonth(s, lyingLow, rng, note) {
   const k = K(s);
-  // Living.
-  s.cash -= k.livingLeader + k.livingMan * s.men.length;
+  // Living, and the St. Paul police's cut.
+  const sheltered = stPaulHolds(s, s.at);
+  s.cash -= k.livingLeader + k.livingMan * s.men.length + (sheltered ? k.stPaulFee : 0);
+  if (sheltered) s.stats.stPaulMonths += 1;
   if (s.cash < 0) {
     // Broke: the men drift off before you starve.
     for (const m of s.men) m.loyalty -= 10;
@@ -171,7 +182,12 @@ function endMonth(s, lyingLow, rng, note) {
   if (s.t === k.kcMassacre) { s.sympathy -= k.sympathyKc; note('Kansas City: four lawmen killed at Union Station. The papers turn.'); }
   if (s.t === k.fdic) { s.sympathy -= k.sympathyFdic; note('Deposits are insured from today. A robbed bank is no longer a ruined farmer.'); }
   if (s.t === k.crimeBills) note('The crime bills are law: robbing a bank is federal, and the agents carry guns.');
-  if (s.t >= TURNS) return end(s, 'atlarge', `still wanted at the end of ${dateName(TURNS - 1)}`);
+  if (sheltered && !stPaulHolds(s, s.at)) {
+    // The arrangement ends while you live under it: the raid comes to your door.
+    s.heat.mn = Math.max(s.heat.mn, k.stPaulRaidHeat);
+    note('The St. Paul arrangement is over. The police who took your money now want you.');
+  }
+  if (s.t >= TURNS) return epilogue(s);
   return s;
 }
 
@@ -188,8 +204,27 @@ function goQuiet(s) {
   return end(s, 'disappeared', 'gone, under another name');
 }
 
-function end(s, kind, how) {
-  s.outcome = { kind, t: s.t, how };
+/** Still at large at the end of 1934: 1935, a month at a time, with the Bureau
+ * armed and your file open (Floyd was shot in October 1934, Nelson in November,
+ * the Barkers in January 1935; Karpis lasted until May 1936). */
+function epilogue(s) {
+  const k = K(s);
+  const t = TURNS - 1;
+  s.fed = Math.max(s.fed, k.epilogueFedFloor);
+  for (let m = 0; m < k.epilogueMonths; m++) {
+    const r = streamFor(s.seed, TURNS + m, 'epilogue');
+    const month = MONTHS[m];
+    if (r.chance(informRisk(s, t))) return end(s, r.chance(0.6) ? 'killed' : 'sold', `sold for the reward in ${month} 1935`, t);
+    if (r.chance(fedRisk(s, { lyingLow: true, t }))) {
+      return r.chance(k.fedKilledShare.armed) ? end(s, 'killed', `shot by federal agents in ${month} 1935`, t) : end(s, 'captured', `taken by federal agents in ${month} 1935`, t);
+    }
+    s.fed = Math.max(k.epilogueFedFloor, s.fed * k.fedDecay);
+  }
+  return end(s, 'atlarge', 'never taken, never free: still on the list at the end of 1935', t);
+}
+
+function end(s, kind, how, t = s.t) {
+  s.outcome = { kind, t, how };
   s.stats.kept = kind === 'disappeared' ? s.cash : 0;
   return s;
 }

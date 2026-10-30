@@ -1,93 +1,102 @@
-# Kill gate: results (2026-10-29)
+# Kill gate: results
 
 Numbers only, before any screens. `node sim/killgate.js 400`: 400 seeds per
 policy, the same seeds for every policy. A gap is REAL only when it is wider than
 its noise floor (2 standard errors of the difference). The model is the engine's
 first cut (`src/engine`), not a throwaway: the game will be built on it.
 
+Round 2 (2026-10-30): the gang has a home; St. Paul is a place to live; Iowa
+added; 1935 epilogue. Round 1 results are in git history (commit 766375e).
+
 ## The policies
 
 | Policy | Plays |
 |---|---|
-| careful | best job in reach by take against risk; crosses a line when the numbers say so; lies low when the month's risk passes 10%; buys a new face, then disappears once it has $21,000 |
-| nocross / alwayscross / coin | careful, but never / always / at random crosses the line after a job |
-| greedy | careful, but stays for $15,000 more before leaving |
+| careful | the best job within a drive of home, by take against risk; moves home when another state is clearly safer (St. Paul, while it holds); lies low when the month's risk at home passes 10%; buys a new face, then disappears once it has $16,000 |
+| nocross / alwayscross / coin | careful, but robs only in its home state / only over the line / either at random |
+| greedy | careful, but stays for $8,000 more before leaving |
 | stayer | careful, but never leaves |
 | bold | careful, with guns out instead of a quiet job |
 | timid | careful, but lies low at 6% risk |
-| reckless | bold, never crosses, never lies low |
-| nostpaul | careful, never uses the St. Paul arrangement |
+| nostpaul | careful, never lives in St. Paul |
+| homebody | careful, never moves house |
+| reckless | bold, robs only at home, never lies low, never moves |
 
 ## Claims and what the numbers say
 
 ### 1. The state line changes value by date: PASSED
 
 Paired: every job a careful player chose, replayed from the same state with the
-same dice, once crossing and once staying (10 replays each).
+same dice, once with the gang living in the town's state and once living over the
+line, with the same heat at home (10 replays each). Caught that night or that month.
 
-| Phase | Caught that night or month, stayed | Crossed | Gap | Floor |
+| Phase | Rob at home | Rob over the line | Gap | Floor |
 |---|---|---|---|---|
-| May 1933 to Feb 1934 (Bureau unarmed) | 13.9% | 6.1% | -7.8 | 0.5 |
-| Mar to May 1934 (after Crown Point) | 22.2% | 12.6% | -9.6 | 3.4 |
-| June 1934 on (crime bills in force) | 37.1% | 32.5% | -4.6 | 8.0 (noise) |
+| May 1933 to Feb 1934 (Bureau unarmed) | 11.7% | 4.5% | -7.2 | 0.5 |
+| Mar to May 1934 (after Crown Point) | 20.2% | 12.9% | -7.3 | 1.5 |
+| June 1934 on (crime bills in force) | 26.8% | 22.9% | -3.9 | 3.6 |
 
-Crossing halves the risk until the laws pass; after that the gain is inside the
-noise. Every job is also more dangerous in 1934, by about three times.
+The line cuts the risk by about 60% before the laws and by about 15% after. It
+does not go to zero, because a line between the job and your bed still keeps the
+local heat off your door; what it no longer stops is the Bureau.
 
-### 2. The 1934 laws end careers: PASSED (for the player who stays)
+### 2. The 1934 laws end careers: PASSED
 
 | Comparison | Got out | Killed |
 |---|---|---|
-| greedy, real 1934 / laws never pass | 3.3% / 7.0% (REAL) | 25.5% / 11.8% (REAL) |
-| careful / greedy, real 1934 | 18.5% / 3.3% (REAL) | 12.0% / 25.5% (REAL) |
-| stayer, real 1934 / laws never pass | 0% / 0% | 26.8% / 12.0% (REAL) |
+| careful, real 1934 / laws never pass | 18.8% / 23.0% (noise) | 24.8% / 9.8% (REAL) |
+| greedy, real 1934 / laws never pass | 1.3% / 6.3% (REAL) | 37.3% / 14.2% (REAL) |
+| careful / greedy, real 1934 | 18.8% / 1.3% (REAL) | 24.8% / 37.3% (REAL) |
+| stayer, real 1934 / laws never pass | 0% / 0% | 37.8% / 17.5% (REAL) |
 
-The laws turn arrests into shootings and punish leaving late. A careful player
-who leaves by spring 1934 is barely touched by them (18.5% vs 19.8%, noise):
-that is the period's lesson, and the game should make a player feel it coming
-(the papers, the Bureau's named list) rather than hide it.
+The laws more than double the killing and punish leaving late.
 
 ### 3. Disappearing is reachable but rare: PASSED
 
-careful 18.5% (author's band 15-20%). Never leaving: 0%. Reckless: 9.5% and
-killed 25.8% (both REAL). Median career 10 months; Dillinger's was about 14.
+careful 18.8% (author's band 15-20%). Never leaving 0%. Reckless 0.8%. Robbing
+only at home 0%. Median career 12 months; Dillinger's was about 14.
 
-Most careful players who leave are caught in the quiet months after: the men
-you leave behind know your new name (recognition grows with each man's doubt).
-A new face and loyal men are what get you out.
+### 4. St. Paul matters while it lasts: PASSED
 
-### 4. St. Paul matters while it lasts: FAILED (open)
+careful 18.8% vs never living there 13.0% (REAL); captured 48.8% vs 60.5% (REAL).
+The cost: a careful gang still living there when the arrangement ends is raided,
+which is most of why careful is killed 24.8% of the time against 20.3% without St.
+Paul (noise, but the direction the record gives).
 
-careful 18.5% vs never using St. Paul 15.5%: a 3-point gap inside a 5.3-point
-floor. The bot lies low only about one month a game, so a place to lie low
-cannot matter much. Proposed for the design stage: St. Paul as a **home base**
-(where the gang lives between jobs, not a place to hide after one), with the
-arrangement's end in summer 1934 forcing a move. Not built until the design
-says so; until then the kill gate keeps printing this row.
+## 1935: the epilogue for men still free
+
+Of the games still running at December 1934 (stayer, careful and greedy
+together, 238 games): 39% killed in 1935, 26% taken, 3% sold, 33% never taken
+but never free. Most of the real men still at large in late 1934 were dead or in
+prison by 1936.
 
 ## Trades the gate shows (not faults)
 
-- **Bold vs quiet:** the same chance of getting out (15.3% vs 18.5%, noise) but
-  more townsfolk killed (median 1 vs 0). A choice of character, not of odds.
-- **Timid vs careful:** the same chance of getting out, more killed (17.3% vs
-  12.0%): hiding too often burns the money you need to leave before 1934.
-- **Never crossing:** the same chance of getting out, but careers half as long
-  (6 months vs 10) and more killed (18.5% vs 12.0%).
+- **Bold vs quiet:** the same chance of getting out (14.8% vs 18.8%, noise),
+  shorter careers (9 months vs 12) and more townsfolk killed (median 1 vs 0).
+- **Timid vs careful:** no difference. Lying low sooner neither helps nor hurts;
+  where you live matters more than how often you hide.
+- **Robbing only over the line:** 11.0% (REAL loss): the towns near home run dry
+  and a gang that will not rob nearby runs short.
 
-## Exploits found and closed during the gate
+## Exploits found and closed
 
-| Found | Fix |
-|---|---|
-| Careers of six months: nobody reached 1934, so the laws could not matter | Local catch and getaway risk halved; street capture in cities cut to 1.5% per guard level |
-| Bold beat quiet outright (34% vs 22%) | Bold adds heat; quiet jobs take 85% of a bold one, not 75% |
-| Rob hard in 1933 and leave before the laws: 32% wins | The men you leave know your new name; recognition scales with their doubt |
-| Crossing paid in 1934 as well as in 1933 | Roadblocks at bridges and lines once the Bureau is armed (crossing risk x1.15) |
-| Lying low never paid | Lying low halves the Bureau's chance and cools its trail faster |
+| Round | Found | Fix |
+|---|---|---|
+| 1 | Careers of six months: nobody reached 1934 | Local catch and getaway risk halved; city street capture cut |
+| 1 | Bold beat quiet outright (34% vs 22%) | Bold adds heat; quiet jobs take 85% of a bold one |
+| 1 | Rob hard in 1933, leave before the laws: 32% | The men you leave know your new name |
+| 1 | Crossing paid as much in 1934 | Roadblocks at bridges and lines once agents are armed |
+| 1 | Lying low never paid | Lying low halves the Bureau's chance and cools its trail |
+| 2 | St. Paul was a money trap ($1,600 a month against five small towns): 1% got out | The fee cut to $250; Iowa added; the price of leaving set to $16,000 |
 
 ## Open before design
 
-1. St. Paul as home base (claim 4).
-2. The epilogue for men still at large at December 1934 (2.5% of careful, 19% of
-   stayers): what the Bureau did next, from the record (Floyd, Nelson, the Barkers).
-3. Cars, radio in your own car, the moll, named men and lawmen, the family code:
-   none modelled yet. Each must pass its own row in this gate before it is built.
+1. **Moving house is only St. Paul.** careful never moves anywhere else (the
+   homebody row equals nostpaul). Whether other moves matter waits for the
+   design stage: tourist courts and lodges (Little Bohemia) are the candidates.
+2. Cars, radio in your own car, the girlfriend, named men and lawmen, the family
+   code: none modelled yet. Each gets its own row here before it is built.
+3. The 1935 dates in the epilogue text (Floyd, Nelson, the Barkers, Karpis) and
+   the Mason City and Lincoln Court dates are from general knowledge and still to
+   be checked against a source before they appear as game text.

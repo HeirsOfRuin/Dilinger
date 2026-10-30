@@ -19,7 +19,7 @@ export function newGame(seed, tune = {}, start = {}) {
     seed: seed >>> 0,
     t: 0,
     tune: k,
-    at: start.at ?? 'in',
+    at: start.at ?? 'in', // the gang's home state
     cash: k.startCash,
     heat: Object.fromEntries(STATES.map((st) => [st.id, 0])),
     fed: 0,
@@ -31,10 +31,11 @@ export function newGame(seed, tune = {}, start = {}) {
     idle: 0,
     surgery: false,
     killedIn: {}, // states where you have killed: their arrangements end
+    stPaulBroken: false, // a job in Minnesota ends the St. Paul arrangement
     robbed: {}, // town id -> turn last robbed (a vault refills slowly)
     gone: null, // { month, need } once you have left to disappear
     outcome: null, // { kind: 'disappeared'|'killed'|'captured'|'sold'|'atlarge', t, how }
-    stats: { jobs: 0, take: 0, kept: 0, killed: 0, lawmen: 0, menDead: 0, crossed: 0, lowMonths: 0, stPaulMonths: 0 },
+    stats: { jobs: 0, take: 0, kept: 0, killed: 0, lawmen: 0, menDead: 0, crossed: 0, lowMonths: 0, stPaulMonths: 0, moves: 0 },
     jobsLog: [], // one row per job, for the instruments: { t, phase, crossed, caught }
     log: [],
   };

@@ -17,7 +17,7 @@ export const radioIn = (s, stateId, t = s.t) => t >= stateById(stateId).radioFro
 export function fedRisk(s, { lyingLow = false, at = s.at, t = s.t } = {}) {
   const k = K(s);
   const recog = s.surgery ? k.surgeryRecog : 1;
-  const low = lyingLow ? k.fedLieLow * (stPaulHolds(s, at, t) ? k.fedStPaul : 1) : 1;
+  const low = (lyingLow ? k.fedLieLow : 1) * (stPaulHolds(s, at, t) ? k.fedStPaul : 1);
   return Math.min(0.9, (s.fed / 100) * k.fedReach[phase(s, t)] * k.fedCatch * recog * low);
 }
 
@@ -29,12 +29,14 @@ export function localRisk(s, stateId, { lyingLow = false, t = s.t } = {}) {
   const sym = 1.4 - s.sympathy / 100; // a county that likes you looks the other way
   const base = lyingLow ? k.hideRisk : k.localCatch;
   let p = h * base * radio * sym;
-  if (lyingLow && stPaulHolds(s, stateId, t)) p *= k.stPaulX;
+  if (stPaulHolds(s, stateId, t)) p *= k.stPaulX;
   return Math.min(0.9, p);
 }
 
-export function stPaulHolds(s, stateId, t = s.t) {
-  return stateId === 'mn' && t < K(s).stPaulEnds && !s.killedIn.mn;
+/** The St. Paul arrangement shelters a gang that lives there, until summer 1934,
+ * or until the gang breaks its one rule: no jobs and no killing in Minnesota. */
+export function stPaulHolds(s, stateId = 'mn', t = s.t) {
+  return stateId === 'mn' && t < K(s).stPaulEnds && !s.killedIn.mn && !s.stPaulBroken;
 }
 
 /** Tonight's chance the pursuit catches you after a job, staying or crossing. */

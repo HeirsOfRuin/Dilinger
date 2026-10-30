@@ -7,7 +7,7 @@ do. One turn a month.
 Status: **spec and kill gate done; no screens yet.**
 
 - `docs/SPEC.md`: the one-page spec, with the checked dates.
-- `docs/KILLGATE.md`: what the numbers prove, what failed, what is open.
+- `docs/KILLGATE.md`: what the numbers prove and what is open.
 - `src/engine`: the pure engine (`act(state, action)`), seeded and deterministic.
 - `src/data`: every tuning number and the map.
 - `sim`: bot policies and the kill gate.
