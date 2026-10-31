@@ -70,6 +70,7 @@ function riskCard(v) {
       <div class="line"><span>The Bureau</span><span>${pct(r.bureau)}</span></div>
       <div class="line"><span>Someone selling you (reward ${money(v.reward)})</span><span>${pct(r.informers)}</span></div>
       ${r.friend ? `<div class="line"><span class="blood">${esc(v.girl.friend)}</span><span class="blood">${pct(r.friend)}</span></div>` : ''}
+      ${r.keeper ? `<div class="line"><span>The lodge keeper, who reads the papers</span><span>${pct(r.keeper)}</span></div>` : ''}
       <div class="line"><span>Taken this month, all told</span><span>${pct(r.total)}</span></div>
     </div>
     <p class="small">Lying low cuts the police and the Bureau. ${v.stPaul ? `St. Paul's police shelter you for ${v.stPaulEndsIn} more month${v.stPaulEndsIn === 1 ? '' : 's'}: no jobs in Minnesota.` : ''}</p>
@@ -130,13 +131,16 @@ function hub(v) {
   return `${bar(v)}
   <div class="phase ${v.phase}">${esc(v.phaseLabel)}</div>
   ${girl?.warned && v.homeId === girl.city ? `<div class="warning"><b>${esc(girl.name)} is worried.</b> ${esc(girl.friend)} has been asking about the reward, and about her own papers. Every month you stay in ${esc(girl.cityName)}, she may sell you.</div>` : ''}
+  ${v.pending ? `<div class="card incident"><span class="t">Before anything else</span><p>${esc(v.pending.text)}</p>
+    ${v.pending.options.map((o) => `<button class="choice" data-a="answer" data-v="${o.id}" ${o.afford ? '' : 'disabled'}><b>${esc(o.label)}</b><small>${esc(o.stakes.join(' · ') || 'nothing changes')}${o.afford ? '' : ' · you cannot afford it'}</small></button>`).join('')}
+  </div>` : ''}
   ${riskCard(v)}
-  <div class="card"><h3>This month</h3>
+  ${v.pending ? '' : `<div class="card"><h3>This month</h3>
     <button class="btn block" data-a="plan">Plan a job</button>
-    <button class="btn block secondary" data-a="lielow">Lie low in ${esc(v.home)} (${money(K(s).lieLowCost)} beyond living)</button>
+    <button class="btn block secondary" data-a="lielow">Lie low ${v.lodge ? 'at the lodge' : `in ${esc(v.home)}`} (${money(K(s).lieLowCost)} beyond living)</button>
     <button class="btn block secondary" data-a="screen" data-v="move">Move the gang</button>
     <button class="btn block secondary" data-a="screen" data-v="leave">Get out: a new face, a new name</button>
-  </div>
+  </div>`}
   <div class="card"><h3>The car</h3>
     ${v.car.v8 ? '<p>A Ford V-8 of your own, bought under another name. It outruns most police cars; the Bureau can trace its plates.</p>'
       : `<p>You steal a car for every job. A stolen car over a state line is a federal crime.</p><button class="btn small" data-a="buy" ${v.cash < v.v8Cost ? 'disabled' : ''}>Buy a Ford V-8 (${money(v.v8Cost)})</button>`}
@@ -189,7 +193,7 @@ function move(v) {
   <p class="small">Moving takes the month (you lie low on arrival). The danger shown is a month lying low there.</p>
   ${list.map((h) => `<button class="job" data-a="moveto" data-v="${h.id}" aria-pressed="${h.here}">
     <div class="row"><b>${esc(h.name)}${h.here ? ' (home)' : ''}</b><span>${riskWords(h.risk)}, ${pct(h.risk)}</span></div>
-    <small>${money(h.cost)} · heat ${Math.round(h.heat)} · ${h.radio ? 'police radio' : 'no radio'}${h.stPaul ? ' · St. Paul shelters you' : ''}${h.girlsCity ? ' · her friend is here' : ''}</small></button>`).join('')}
+    <small>${money(h.cost)} · ${h.lodge ? 'no police for miles' : `heat ${Math.round(h.heat)} · ${h.radio ? 'police radio' : 'no radio'}`}${h.stPaul ? ' · St. Paul shelters you' : ''}${h.keeper ? ' · the keeper may call the agents' : ''}${h.girlsCity ? ' · her friend is here' : ''}</small></button>`).join('')}
   <button class="btn block secondary" data-a="back">Back</button>`;
 }
 
@@ -262,6 +266,7 @@ function help(v) {
   <p><b>The line.</b> The gang drives home after a job. Rob a bank over the line from home and the line is between the job and your bed: local police stop at it. A stolen car taken over a line is federal from the start.</p>
   <p><b>The Bureau</b> learns by date. Until March 1934 it can only watch. After Crown Point it hunts by name. From June 1934 robbing a bank is federal and the agents carry guns: the line no longer helps much, and a catch is more often a killing.</p>
   <p><b>St. Paul</b> shelters a gang that lives there, for a fee, until summer 1934, or until you rob or kill in Minnesota. Still living there when it ends, and the police you paid come for you.</p>
+  <p><b>A lodge</b> in the Wisconsin woods has no police for miles. After March 1934 the agents ask at the resorts, and a keeper who reads about the reward may call them.</p>
   <p><b>Your girl</b> makes home safer. If her friend starts asking about the reward, you will be told: leave her city.</p>
   <p><b>Winning</b> is leaving with ${money(k.disappearNeed)} or more and lasting ${k.disappearMonths} quiet months. Careful players manage it about one time in five.</p>
   <button class="btn block" data-a="back">Back</button>`;
@@ -320,7 +325,7 @@ const HANDLERS = {
   bold: (v) => { ui.plan.bold = v === '1'; },
   car: (v) => { ui.plan.car = v; },
   dojob: () => { play({ kind: 'job', town: ui.plan.town, bold: ui.plan.bold, car: ui.plan.car }); },
-  lielow: () => { play({ kind: 'lielow', where: s.at }); },
+  lielow: () => { play({ kind: 'lielow', where: s.lodge ? 'lodge' : s.at }); },
   moveto: (v) => { play({ kind: 'lielow', where: v }); },
   surgery: () => { play({ kind: 'surgery', where: s.at }); },
   disappear: () => { play({ kind: 'disappear' }); },
@@ -329,6 +334,7 @@ const HANDLERS = {
   bonus: (v) => { play({ kind: 'bonus', man: Number(v), amount: 250 }); },
   release: (v) => { play({ kind: 'release', man: Number(v) }); },
   girl: () => { if (play({ kind: 'girl' })) toast(`You took up with ${s.girl.name}.`); },
+  answer: (v) => { if (play({ kind: 'answer', option: v })) toast(s.log.at(-1)?.text.split('. You: ').pop() ?? 'Done.'); },
   end: () => { ui.screen = 'end'; },
 };
 

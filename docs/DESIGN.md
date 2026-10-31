@@ -141,3 +141,20 @@ Hiring is in (a stake of $300, up to five men). The kill gate shows no gain for 
 careful player (row 10, 18.1% vs 19.6%, noise): careful gangs rarely lose men.
 It stays as a way back after losses, not a strategy.
 A man sent home still knows your new name: he counts when you disappear.
+
+## Incidents and the lodge (2026-10-31)
+
+**Incidents** (src/data/incidents.data.js, eleven of them): a question in about
+one month of three, answered before the month's action. A farm auction, a
+reporter, a crooked detective, a man who wants to go home, a wound gone bad, a
+bartender's payroll tip, a farm boy who wants to ride, a newspaper photograph, a
+curious landlady, the relief line, a man who says the split is unfair. The stakes
+under each answer are worded from its effects, and an unknown effect is an error.
+Kill gate rows 11a-c.
+
+**The lodge**: a resort lodge in the Wisconsin woods (after Little Bohemia, April
+1934) as a home. No police for miles and less of the Bureau; but from Crown Point
+on the agents ask at the resorts, and the keeper's chance of calling them grows
+with the reward. It is shown as its own line in the month's danger. Kill gate
+rows 12 and 12b: no help to a careful man who leaves by spring 1934; a real help
+to one still riding when St. Paul closes.

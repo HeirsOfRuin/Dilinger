@@ -5,8 +5,9 @@ import { K, townById, stateById, FRIEND_CITY } from './state.js';
 import { STATES, TOWNS, TURNS, neighbours, dateName, dateOf } from '../data/world.data.js';
 import { HISTORY, FILLER, ABOUT_YOU } from '../data/news.data.js';
 import { SKILLS } from '../data/gang.data.js';
-import { phase, radioIn, stPaulHolds, fedRisk, localRisk, getawayRisk, informRisk, shootChance, killChance, sceneChance, friendRisk, reward, vaultCash, recogRisk } from './odds.js';
+import { phase, radioIn, stPaulHolds, keeperRisk, fedRisk, localRisk, getawayRisk, informRisk, shootChance, killChance, sceneChance, friendRisk, reward, vaultCash, recogRisk } from './odds.js';
 import { streamFor } from './rng.js';
+import { pendingView } from './incidents.js';
 
 export const money = (n) => `$${Math.round(n).toLocaleString('en-US')}`;
 export const pct = (p) => (p < 0.005 ? 'under 1%' : `${Math.round(p * 100)}%`);
@@ -49,6 +50,7 @@ export function homeRisk(s, { lyingLow = false } = {}) {
     bureau: fedRisk(s, { lyingLow }),
     informers: informRisk(s),
     friend: friendRisk(s, s.t),
+    keeper: keeperRisk(s),
   };
   const total = 1 - Object.values(parts).reduce((a, p) => a * (1 - p), 1);
   return { ...parts, total };
@@ -102,14 +104,18 @@ export function jobList(s, opts = {}) {
 
 /** Where the gang could live, with the month's danger there. */
 export function homes(s) {
-  return STATES.map((st) => {
-    const t = { ...s, at: st.id };
+  const k = K(s);
+  const places = [...STATES.map((st) => ({ id: st.id, at: st.id, lodge: false, name: st.name })),
+    { id: 'lodge', at: 'wi', lodge: true, name: 'A lodge in the Wisconsin woods' }];
+  return places.map((st) => {
+    const t = { ...s, at: st.at, lodge: st.lodge };
     const r = homeRisk(t, { lyingLow: true });
     return {
-      id: st.id, name: st.name, here: st.id === s.at, risk: r.total,
-      stPaul: stPaulHolds(s, st.id), radio: radioIn(s, st.id), heat: s.heat[st.id],
-      cost: st.id === s.at ? K(s).lieLowCost : K(s).lieLowCost + K(s).moveCost,
-      girlsCity: s.girl && !s.girl.taken && s.girl.city === st.id && s.girl.warnedAt != null,
+      id: st.id, name: st.name, here: st.at === s.at && st.lodge === !!s.lodge, risk: r.total, lodge: st.lodge,
+      stPaul: stPaulHolds(s, st.at), radio: radioIn(s, st.at), heat: s.heat[st.at],
+      cost: (st.at === s.at && st.lodge === !!s.lodge ? k.lieLowCost : k.lieLowCost + k.moveCost) + (st.lodge ? k.lodgeCost : 0),
+      keeper: st.lodge && phase(s) !== 'early',
+      girlsCity: s.girl && !s.girl.taken && s.girl.city === st.at && s.girl.warnedAt != null,
     };
   });
 }
@@ -152,7 +158,7 @@ export function view(s) {
     date: dateName(s.t), year: d.year, turn: s.t, turnsLeft: TURNS - s.t,
     phase: ph, phaseLabel: PHASE[ph].label, phaseWords: PHASE[ph].words,
     me: { ...s.me, skillName: SKILLS[s.me.skill] },
-    home: st.name, homeId: s.at, stPaul: stPaulHolds(s, s.at),
+    home: s.lodge && s.at === 'wi' ? 'the lodge' : st.name, homeId: s.at, lodge: !!s.lodge, stPaul: stPaulHolds(s, s.at),
     stPaulEndsIn: stPaulHolds(s, s.at) ? k.stPaulEnds - s.t : 0,
     cash: s.cash, reward: reward(s), rank: rankWords(s.legend), legend: Math.round(s.legend),
     sympathy: Math.round(s.sympathy), fed: Math.round(s.fed),
@@ -164,6 +170,7 @@ export function view(s) {
     leaving: leaving(s), papers: papers(s),
     log: s.log.filter((l) => l.t >= s.t - 1),
     family: s.family, familyFound: s.familyFound,
+    pending: pendingView(s),
   };
 }
 

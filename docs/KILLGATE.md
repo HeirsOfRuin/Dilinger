@@ -5,6 +5,25 @@ policy, the same seeds for every policy. A gap is REAL only when it is wider tha
 its noise floor (2 standard errors of the difference). The model is the engine
 (`src/engine`), not a throwaway: the game is built on it.
 
+## Round 4 (2026-10-31): incidents, the lodge, hiring
+
+Careful gets out **18.8%** (800 seeds; the price of leaving is now $16,000 to
+absorb what the incidents cost).
+
+| Row | Comparison | Got out | Notes |
+|---|---|---|---|
+| 11a | no incidents / one every two to three months | 23.8% / 20.0% (at $15,500, noise) | they cost money and attention, as they should |
+| 11b | answering sensibly / always the first answer it can afford | 20.3% / 16.1% (REAL) | the answers matter |
+| 11c | answering sensibly / at random | 20.0% / 16.3% (at the floor) | |
+| 12 | lodge / no lodge, careful | 20.3% / 20.0% (noise) | a careful man is mostly gone before St. Paul closes |
+| 12b | lodge / no lodge, a man who never leaves | still free at the end 13.1% / 9.5% (REAL); killed 30.8% / 34.0% (noise) | the lodge is where to go once St. Paul ends |
+| 10 | hiring / never hiring | 19.6% / 18.1% (noise) | a way back after losses, not a strategy |
+
+The first incident table failed 11b: answers changed nothing (random was within
+2 points of sensible). The effects were made to bite where the record says they
+did (a photograph in the papers, a landlady who talks, a man kept against his
+will) and the gap opened to 4 points.
+
 ## Round 3 (2026-10-30): cars, the girl, skills, the family code
 
 Careful now gets out **18.1%** of the time (band 15-20%). Rounds 1 and 2 are

@@ -17,7 +17,7 @@ export const radioIn = (s, stateId, t = s.t) => t >= stateById(stateId).radioFro
 export function fedRisk(s, { lyingLow = false, at = s.at, t = s.t } = {}) {
   const k = K(s);
   const recog = s.surgery ? k.surgeryRecog : 1;
-  const low = (lyingLow ? k.fedLieLow : 1) * girlShelter(s) * (stPaulHolds(s, at, t) ? k.fedStPaul : 1);
+  const low = (lyingLow ? k.fedLieLow : 1) * girlShelter(s) * (stPaulHolds(s, at, t) ? k.fedStPaul : 1) * (atLodge(s, at) ? k.lodgeFed : 1);
   return Math.min(0.9, (s.fed / 100) * k.fedReach[phase(s, t)] * k.fedCatch * recog * low);
 }
 
@@ -30,6 +30,7 @@ export function localRisk(s, stateId, { lyingLow = false, t = s.t } = {}) {
   const base = lyingLow ? k.hideRisk : k.localCatch;
   let p = h * base * radio * sym * girlShelter(s);
   if (stPaulHolds(s, stateId, t)) p *= k.stPaulX;
+  if (atLodge(s, stateId)) p *= k.lodgeLocal;
   return Math.min(0.9, p);
 }
 
@@ -37,6 +38,15 @@ export function localRisk(s, stateId, { lyingLow = false, t = s.t } = {}) {
  * or until the gang breaks its one rule: no jobs and no killing in Minnesota. */
 export function stPaulHolds(s, stateId = 'mn', t = s.t) {
   return stateId === 'mn' && t < K(s).stPaulEnds && !s.killedIn.mn && !s.stPaulBroken;
+}
+
+/** Living at the lodge in the woods (home is Wisconsin, and the lodge is rented). */
+export const atLodge = (s, at = s.at) => at === 'wi' && !!s.lodge;
+
+/** The lodge keeper: his monthly chance of tipping the Bureau, once agents ask at the resorts. */
+export function keeperRisk(s, t = s.t, at = s.at) {
+  if (!atLodge(s, at) || phase(s, t) === 'early') return 0;
+  return Math.min(0.4, reward(s, t) / K(s).lodgeKeeper);
 }
 
 /** Rooms rented in her name: home is safer while you have a girl. */
@@ -100,7 +110,8 @@ export function vaultCash(s, town, t = s.t) {
   const last = s.robbed[town.id];
   const fill = last == null ? 1 : Math.min(1, 0.2 + (t - last) / 12);
   const fdic = t >= K(s).fdic ? 1.1 : 1; // deposits come back once they are insured
-  return Math.round(town.cash * fill * fdic);
+  const tip = s.tip && s.tip.town === town.id && t <= s.tip.t + 1 ? K(s).tipTake : 1; // payroll day
+  return Math.round(town.cash * fill * fdic * tip);
 }
 
 /** Monthly chance of being recognised after you have gone. */

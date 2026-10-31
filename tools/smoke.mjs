@@ -88,6 +88,12 @@ for (let g = 0; g < GAMES; g++) {
       await click('[data-a="tab"][data-v="month"]');
     }
     if (hubVisits === 3) { await click('[data-a="help"]'); await inspect('help'); await click('[data-a="back"]'); }
+    // A question first, when there is one.
+    if (s.pending) {
+      await inspect('incident');
+      await page.locator('[data-a="answer"]:not([disabled])').first().click();
+      continue;
+    }
     // A simple player: buy the car, leave when the money is there, flee a warning, rob otherwise.
     if (!s.car.v8 && s.cash > 5000 && await has('[data-a="buy"]:not([disabled])')) { await click('[data-a="buy"]'); continue; }
     const warned = s.girl && s.girl.warnedAt != null && !s.girl.taken && s.at === s.girl.city;

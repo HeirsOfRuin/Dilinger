@@ -4,8 +4,9 @@
 import { streamFor } from './rng.js';
 import { K, townById, stateById, FRIEND_CITY } from './state.js';
 import { GIRLS, FRIENDS, FIRST, LAST } from '../data/gang.data.js';
+import { rollIncident, answer } from './incidents.js';
 import { TURNS, MONTHS, neighbours } from '../data/world.data.js';
-import { phase, stPaulHolds, fedRisk, localRisk, getawayRisk, informRisk, shootChance, killChance, sceneChance, friendRisk, reward, vaultCash, recogRisk } from './odds.js';
+import { phase, atLodge, keeperRisk, stPaulHolds, fedRisk, localRisk, getawayRisk, informRisk, shootChance, killChance, sceneChance, friendRisk, reward, vaultCash, recogRisk } from './odds.js';
 
 /**
  * Actions:
@@ -13,7 +14,8 @@ import { phase, stPaulHolds, fedRisk, localRisk, getawayRisk, informRisk, shootC
  *                                  The gang drives home after: a town over the line
  *                                  means crossing it tonight.
  *   { kind: 'lielow', where }     a month off the streets; where: a state id to move
- *                                  the gang's home to (or the one you live in)
+ *                                  the gang's home to (or the one you live in), or
+ *                                  'lodge' for a resort lodge in the Wisconsin woods
  *   { kind: 'surgery', where }    a new face; the month is spent lying low
  *   { kind: 'disappear' }         leave with what you have
  * Free actions (no time passes):
@@ -22,6 +24,8 @@ import { phase, stPaulHolds, fedRisk, localRisk, getawayRisk, informRisk, shootC
  *   { kind: 'hire' }              take on a new man (a stake and a gun)
  *   { kind: 'bonus', man, amount } money for one man's loyalty, once a month
  *   { kind: 'release', man }      send a man home with his share
+ *   { kind: 'answer', option }    answer the month's question (s.pending); nothing else
+ *                                  can be done until it is answered
  * A job may name car: 'own' (your V-8) or 'stolen' (the default).
  *
  * s.at is the gang's home: where it lives, and where the month's dangers find it.
@@ -33,6 +37,13 @@ export function act(prev, action) {
   const rng = (label) => streamFor(s.seed, s.t, label);
   const note = (text) => s.log.push({ t: s.t, text });
   let lyingLow = false;
+
+  if (action.kind === 'answer') {
+    if (!s.pending) throw new Error('Nothing is waiting for an answer.');
+    answer(s, action.option, rng(`answer-${s.pending.id}`), note);
+    return s;
+  }
+  if (s.pending) throw new Error('Answer the question first.');
 
   if (action.kind === 'buy') {
     const cost = { v8: k.v8Cost }[action.item];
@@ -100,12 +111,16 @@ export function act(prev, action) {
     if (s.outcome) return s;
   } else if (action.kind === 'lielow' || action.kind === 'surgery') {
     lyingLow = true;
-    const where = action.where ?? s.at;
-    if (where !== s.at) {
+    const target = action.where ?? s.at;
+    const where = target === 'lodge' ? 'wi' : target;
+    const lodge = target === 'lodge' || (target === s.at && atLodge(s));
+    if (where !== s.at || lodge !== !!s.lodge) {
       s.cash -= k.moveCost;
       s.at = where;
+      s.lodge = lodge;
       s.stats.moves += 1;
-      note(`The gang moved to ${stateById(where).name}.`);
+      if (lodge) s.stats.lodgeMoves = (s.stats.lodgeMoves ?? 0) + 1;
+      note(lodge ? 'The gang took a lodge in the Wisconsin woods, under a fishing party\'s name.' : `The gang moved to ${stateById(where).name}.`);
     }
     s.cash -= k.lieLowCost;
     s.idle += 1;
@@ -203,7 +218,8 @@ function endMonth(s, lyingLow, rng, note) {
   // Living, and the St. Paul police's cut.
   const sheltered = stPaulHolds(s, s.at);
   const girl = s.girl && !s.girl.taken;
-  s.cash -= k.livingLeader + k.livingMan * s.men.length + (sheltered ? k.stPaulFee : 0) + (girl ? k.girlCost : 0);
+  s.cash -= k.livingLeader + k.livingMan * s.men.length + (sheltered ? k.stPaulFee : 0) + (girl ? k.girlCost : 0) + (atLodge(s) ? k.lodgeCost : 0);
+  if (atLodge(s)) s.stats.lodgeMonths = (s.stats.lodgeMonths ?? 0) + 1;
   if (sheltered) s.stats.stPaulMonths += 1;
   if (s.cash < 0) {
     // Broke: the men drift off before you starve.
@@ -223,11 +239,17 @@ function endMonth(s, lyingLow, rng, note) {
   const fed = fedRisk(s, { lyingLow });
   const sold = informRisk(s);
   const friend = friendRisk(s);
+  const keeper = keeperRisk(s);
   // Whether the month's last row (a job this month) ended in a catch, for the instruments.
   const job = s.jobsLog.at(-1)?.t === s.t ? s.jobsLog.at(-1) : null;
   if (friend && r.chance(friend)) {
     if (job) job.caught = true;
     return end(s, 'killed', `sold by ${s.girl.friend}: the agents were waiting outside the picture house`);
+  }
+  if (keeper && r.chance(keeper)) {
+    if (job) job.caught = true;
+    const shot = r.chance(k.fedKilledShare[phase(s)]);
+    return end(s, shot ? 'killed' : 'captured', shot ? 'shot when the agents surrounded the lodge: the keeper had called them' : 'taken at the lodge: the keeper had called the agents');
   }
   if (r.chance(sold)) { if (job) job.caught = true; return end(s, phase(s) === 'armed' && r.chance(0.6) ? 'killed' : 'sold', 'sold for the reward'); }
   if (r.chance(fed)) {
@@ -279,6 +301,7 @@ function endMonth(s, lyingLow, rng, note) {
     note('The St. Paul arrangement is over. The police who took your money now want you.');
   }
   if (s.t >= TURNS) return epilogue(s);
+  rollIncident(s, streamFor(s.seed, s.t, 'incident'));
   return s;
 }
 

@@ -89,7 +89,7 @@ export const CONFIG = {
   surgeryCost: 5000, // Dillinger paid about this, May 1934
   surgeryDeath: 0.04, // ether and a back-room doctor
   surgeryRecog: 0.45, // recognition with a new face
-  disappearNeed: 17000, // cash to leave with: a name, a trade, a few years
+  disappearNeed: 16000, // cash to leave with: a name, a trade, a few years
   epilogueMonths: 12, // 1935: what the Bureau does with men still at large
   epilogueFedFloor: 50, // the Public Enemy list keeps your file open
   disappearMonths: 6, // quiet months before the world forgets you
@@ -124,4 +124,15 @@ Object.assign(CONFIG, {
   hireLoyalty: 50, // a new man starts here
   bonusLoyalty: 0.02, // loyalty per dollar of a bonus...
   bonusCap: 10, // ...at most this much a month
+
+  incidentChance: 0.45, // a question in a month...
+  incidentGap: 2, // ...at most one every this many months
+  tipTake: 1.4, // a payroll tip: the take at that bank, this month or next
+
+  // A resort lodge in the Wisconsin woods (Little Bohemia, April 1934): no police
+  // for miles, but the keeper reads the papers.
+  lodgeCost: 400, // a month, on top of living
+  lodgeLocal: 0.3, // police risk at a lodge
+  lodgeFed: 0.7, // the Bureau's chance at a lodge
+  lodgeKeeper: 300000, // the keeper's monthly chance to tip the Bureau = reward / this, once agents canvass the resorts (after Crown Point)
 });

@@ -46,6 +46,7 @@ export function newGame(seed, tune = {}, start = {}) {
     t: 0,
     tune: k,
     at: start.at ?? 'in', // the gang's home state
+    lodge: false, // living at a lodge in the Wisconsin woods (at is 'wi')
     me,
     family: fam, // what the grandfather left, or null
     familyFound: false, // the papers have found the name
@@ -64,7 +65,9 @@ export function newGame(seed, tune = {}, start = {}) {
     killedIn: {}, // states where you have killed: their arrangements end
     stPaulBroken: false, // a job in Minnesota ends the St. Paul arrangement
     robbed: {}, // town id -> turn last robbed (a vault refills slowly)
-    gone: null, // { month, need } once you have left to disappear
+    gone: null, // { from } once you have left to disappear
+    pending: null, // the month's question: { id, b } (src/engine/incidents.js)
+    tip: null, // { town, t }: a payroll day bought from a bartender
     outcome: null, // { kind: 'disappeared'|'killed'|'captured'|'sold'|'atlarge', t, how }
     stats: { jobs: 0, take: 0, kept: 0, killed: 0, lawmen: 0, menDead: 0, crossed: 0, lowMonths: 0, stPaulMonths: 0, moves: 0, warned: 0 },
     jobsLog: [], // one row per job, for the instruments: { t, phase, crossed, caught }
